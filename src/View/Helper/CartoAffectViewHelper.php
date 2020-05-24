@@ -16,27 +16,92 @@ class CartoAffectViewHelper extends AbstractHelper
 
     public function __invoke($data)
     {
-      $concept = $this->api->read('items', $data['idCpt'])->getContent();
+      //récupère le concept
+      if(isset($data['itemCpt']))$concept=$data['itemCpt'];
+      else $concept = $this->api->read('items', $data['idCpt'])->getContent();
+
+      //récupère l'actant
+      //TODO:gérer la création d'un utilisateur anonyme
+      if(!$data['user'])$data['user']=$this->api->read('users', ['email'=>'anonyme.cartoaffect@univ-paris8.fr'])->getContent();
       $userUri = 'http://'.$_SERVER['SERVER_NAME'].str_replace(['item',$concept->id()],['user',$data['user']->getId()],$concept->adminUrl());
-      $actant = $this->ajouteActant($data['user'],$userUri);      
-      $ps = $this->ajouteSemanticPosition($actant, $concept, $data['rapports']);
-      //$anno = $this->ajouteAnnotation($concept, $actant, $dst);
-      return $ps;
+      $actant = $this->ajouteActant($data['user'],$userUri);
+
+      //récupère la position sémantique
+      $position = false;
+      if(isset($data['rapports'])){
+          //traitement suivant le ressource template
+          switch ($data['idRt']) {
+            case $data['themeSetting']['rt_idRapport']:
+              $position = $this->ajouteSemanticPosition($actant, $concept, $data);        
+              break;
+            case $data['themeSetting']['rt_idSonar']:
+              $position = $this->ajouteSonarPosition($actant, $concept, $data);        
+            break;
+          }        
+      }
+      //$anno = $this->ajouteAnnotation($concept, $this->actant, $dst);
+      return ['actant'=>$actant, 'position'=>$position];
+    }
+
+
+     /** Ajoute une position sémantique SONAR
+     *
+     * @param o:item  $this->actant
+     * @param o:item  $concept
+     * @param array   $data
+     * @return o:item
+     */
+    protected function ajouteSonarPosition ($actant, $concept, $data)
+    {
+
+      $ref = "SonarPosition:".$concept->id()."-".$actant->id();
+      $rt =  $this->api->read('resource_templates', $data['idRt'])->getContent();
+      $rc =  $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
+      //pas de mise à jour des positions
+      $oItem = [];
+      $oItem['o:resource_class'] = ['o:id' => $rc->id()];
+      $oItem['o:resource_template'] = ['o:id' => $rt->id()];
+      foreach ($rt->resourceTemplateProperties() as $p) {
+        $oP = $p->property();
+        if(isset($data['rapports'][$oP->term()])){
+          $val = $data['rapports'][$oP->term()];
+          if(is_string($val))$val=[$val];
+          foreach ($val as $v) {
+            if(!is_string($v) && $v['type']=='resource'){
+              $valueObject = [];
+              $valueObject['value_resource_id']=$v['value'];        
+              $valueObject['property_id']=$oP->id();
+              $valueObject['type']='resource';    
+              $oItem[$oP->term()][] = $valueObject;    
+            }else{
+              $valueObject = [];
+              $valueObject['@value'] = $v;
+              $valueObject['type'] = 'literal';
+              $valueObject['property_id']=$oP->id();
+              $oItem[$oP->term()][] = $valueObject; 
+            } 
+          }  
+        }
+      }
+      $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+      
+      return $result;      
+
     }
 
 
      /** Ajoute une position sémantique
      *
-     * @param o:item  $actant
+     * @param o:item  $this->actant
      * @param o:item  $concept
      * @param array   $rapports
      * @return o:item
      */
-    protected function ajouteSemanticPosition($actant, $concept, $rapports)
+    protected function ajouteSemanticPosition($actant, $concept, $data)
     {
 
       $ref = "SemanticPosition:".$concept->id()."-".$actant->id();
-      $rt =  $this->api->read('resource_templates', ['label' => 'Rapports entre concepts'])->getContent();
+      $rt =  $this->api->read('resource_templates', $data['idRt'])->getContent();
       $rc =  $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
       $pIRB =  $this->api->search('properties', ['term' => 'dcterms:isReferencedBy',])->getContent()[0];
       //création ou mise à jour
@@ -88,7 +153,8 @@ class CartoAffectViewHelper extends AbstractHelper
         $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
       }
       //ajoute ou modifie les rapports au propriété
-      foreach ($rapports as $r) {
+      foreach ($data['rapports'] as $r) {
+        $oItem = [];
         $oP =  $this->api->search('properties', ['term' => $r['rapport']['term']])->getContent()[0];
         $valueObject = [];
         $valueObject['value_resource_id']=$r['id'];        
