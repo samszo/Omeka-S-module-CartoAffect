@@ -1,0 +1,27 @@
+o:id,url,o:resource_class,o:item_set[dcterms:title],dcterms:title,plmk:hasIcon,skos:inScheme,skos:broader,genex:hasSynonyme,schema:color,jdc:ordreCrible
+7331,http://localhost/polemika/omk/admin/item/7331,skos:Concept,Concepts pour les émotions,colère,😡,7300,,,#c13b6c,
+7330,http://localhost/polemika/omk/admin/item/7330,skos:Concept,Concepts pour les émotions,mépris,🙄,7300,,,#aa348b,
+7329,http://localhost/polemika/omk/admin/item/7329,skos:Concept,Concepts pour les émotions,dégout,🤢,7300,,,#4403ff,
+7328,http://localhost/polemika/omk/admin/item/7328,skos:Concept,Concepts pour les émotions,envie,🤨,7300,,,#1e1ce4,
+7327,http://localhost/polemika/omk/admin/item/7327,skos:Concept,Concepts pour les émotions,culpabilité,😟,7300,,,#569ec0,
+7326,http://localhost/polemika/omk/admin/item/7326,skos:Concept,Concepts pour les émotions,honte,😳,7300,,,#45b3b9,
+7325,http://localhost/polemika/omk/admin/item/7325,skos:Concept,Concepts pour les émotions,peur,😱,7300,,,#01f7e2,
+7324,http://localhost/polemika/omk/admin/item/7324,skos:Concept,Concepts pour les émotions,tristesse,😢,7300,,,#00f98a,
+7323,http://localhost/polemika/omk/admin/item/7323,skos:Concept,Concepts pour les émotions,surprise,😮,7300,,,#0bad00,
+7322,http://localhost/polemika/omk/admin/item/7322,skos:Concept,Concepts pour les émotions,intérêt,🤔,7300,,,#52dc00,
+7321,http://localhost/polemika/omk/admin/item/7321,skos:Concept,Concepts pour les émotions,espoir,🤗,7300,,,#b6f603,
+7320,http://localhost/polemika/omk/admin/item/7320,skos:Concept,Concepts pour les émotions,soulagement,😌,7300,,,#ebfe0f,
+7319,http://localhost/polemika/omk/admin/item/7319,skos:Concept,Concepts pour les émotions,satisfaction,🙂,7300,,,#fbfd00,
+7318,http://localhost/polemika/omk/admin/item/7318,skos:Concept,Concepts pour les émotions,joie,😀,7300,,,#f8881a,
+7317,http://localhost/polemika/omk/admin/item/7317,skos:Concept,Concepts pour les émotions,allégresse,😇,7300,,,#e38700,
+7301,http://localhost/polemika/omk/admin/item/7301,skos:Concept,Concepts pour les émotions,fierté,😊,7300,,https://crisco2.unicaen.fr/des/synonymes/fierté fierté,#fa0204,
+6563,http://localhost/polemika/omk/admin/item/6563,skos:Concept,Concepts pour les émotions,avec tous,,6561,,,,2
+6562,http://localhost/polemika/omk/admin/item/6562,skos:Concept,Concepts pour les émotions,aucun,,6561 | 6558,,,,1
+6560,http://localhost/polemika/omk/admin/item/6560,skos:Concept,Concepts pour les émotions,contrôlable,,,,,,
+6559,http://localhost/polemika/omk/admin/item/6559,skos:Concept,Concepts pour les émotions,incontrôlable,,,,,,
+6557,http://localhost/polemika/omk/admin/item/6557,skos:Concept,Concepts pour les émotions,moi,,6555,,,,
+6556,http://localhost/polemika/omk/admin/item/6556,skos:Concept,Concepts pour les émotions,les autres,,6555,,,,
+6554,http://localhost/polemika/omk/admin/item/6554,skos:Concept,Concepts pour les émotions,plaisant,,6552,,,,
+6553,http://localhost/polemika/omk/admin/item/6553,skos:Concept,Concepts pour les émotions,déplaisant,,6552,,,,
+6551,http://localhost/polemika/omk/admin/item/6551,skos:Concept,Concepts pour les émotions,très,,6549 | 6558,,,,2
+6550,http://localhost/polemika/omk/admin/item/6550,skos:Concept,Concepts pour les émotions,pas,,6549,,,,

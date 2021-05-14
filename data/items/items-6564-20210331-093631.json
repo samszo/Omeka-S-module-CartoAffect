@@ -1,0 +1,923 @@
+{
+    "@context": "http://localhost/polemika/omk/api-context",
+    "@id": "http://localhost/polemika/omk/api/items/6564",
+    "@type": [
+        "o:Item",
+        "schema:Action"
+    ],
+    "o:id": 6564,
+    "o:is_public": true,
+    "o:owner": {
+        "@id": "http://localhost/polemika/omk/api/users/1",
+        "o:id": 1
+    },
+    "o:resource_class": {
+        "@id": "http://localhost/polemika/omk/api/resource_classes/413",
+        "o:id": 413
+    },
+    "o:resource_template": null,
+    "o:thumbnail": null,
+    "o:title": "Rapports aux émotions",
+    "o:created": {
+        "@value": "2021-03-01T11:50:25+00:00",
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+    },
+    "o:modified": {
+        "@value": "2021-03-26T16:19:17+00:00",
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+    },
+    "o:media": [
+        {
+            "@id": "http://localhost/polemika/omk/api/media/6565",
+            "o:id": 6565
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/media/6566",
+            "o:id": 6566
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/media/6567",
+            "o:id": 6567
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/media/6568",
+            "o:id": 6568
+        }
+    ],
+    "o:item_set": [],
+    "dcterms:title": [
+        {
+            "type": "literal",
+            "property_id": 1,
+            "property_label": "Title",
+            "is_public": true,
+            "@value": "Rapports aux émotions"
+        }
+    ],
+    "dcterms:description": [
+        {
+            "type": "literal",
+            "property_id": 4,
+            "property_label": "Description",
+            "is_public": true,
+            "@value": "Pour commencer : positionnez votre état émotionnel présent. "
+        },
+        {
+            "type": "literal",
+            "property_id": 4,
+            "property_label": "Description",
+            "is_public": true,
+            "@value": "Evaluez vos émotions face aux informations."
+        },
+        {
+            "type": "literal",
+            "property_id": 4,
+            "property_label": "Description",
+            "is_public": true,
+            "@value": "Corrigez les émotions calculées."
+        },
+        {
+            "type": "literal",
+            "property_id": 4,
+            "property_label": "Description",
+            "is_public": true,
+            "@value": "Observez les résultats"
+        },
+        {
+            "type": "literal",
+            "property_id": 4,
+            "property_label": "Description",
+            "is_public": true,
+            "@value": "Merci pour votre attention"
+        }
+    ],
+    "schema:repeatCount": [
+        {
+            "type": "literal",
+            "property_id": 1413,
+            "property_label": "repeatCount",
+            "is_public": true,
+            "@value": "1"
+        },
+        {
+            "type": "literal",
+            "property_id": 1413,
+            "property_label": "repeatCount",
+            "is_public": true,
+            "@value": "4"
+        },
+        {
+            "type": "literal",
+            "property_id": 1413,
+            "property_label": "repeatCount",
+            "is_public": true,
+            "@value": "1"
+        },
+        {
+            "type": "literal",
+            "property_id": 1413,
+            "property_label": "repeatCount",
+            "is_public": true,
+            "@value": "1"
+        },
+        {
+            "type": "literal",
+            "property_id": 1413,
+            "property_label": "repeatCount",
+            "is_public": true,
+            "@value": "1"
+        }
+    ],
+    "jdc:hasCrible": [
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6548",
+            "value_resource_id": 6548,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6548",
+            "display_title": "rapports aux émotions"
+        }
+    ],
+    "schema:targetCollection": [
+        {
+            "type": "resource",
+            "property_id": 1791,
+            "property_label": "targetCollection",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/item_sets/2",
+            "value_resource_id": 2,
+            "value_resource_name": "item_sets",
+            "url": "/polemika/omk/admin/item-set/2",
+            "display_title": "Gorafi Fake News",
+            "thumbnail_url": "http://localhost/polemika/omk/files/square/25e000357bf61b62100aae638e0cda410793d96c.jpg",
+            "thumbnail_title": "http://www.legorafi.fr/wp-content/uploads/2019/11/news-1729539_1280-e1572944038677-350x165.jpg",
+            "thumbnail_type": "image/jpeg"
+        }
+    ],
+    "schema:actionApplication": [
+        {
+            "type": "literal",
+            "property_id": 1696,
+            "property_label": "actionApplication",
+            "is_public": true,
+            "@value": "none"
+        },
+        {
+            "type": "literal",
+            "property_id": 1696,
+            "property_label": "actionApplication",
+            "is_public": true,
+            "@value": "getItemForEval"
+        },
+        {
+            "type": "literal",
+            "property_id": 1696,
+            "property_label": "actionApplication",
+            "is_public": true,
+            "@value": "setCorItemEval"
+        },
+        {
+            "type": "literal",
+            "property_id": 1696,
+            "property_label": "actionApplication",
+            "is_public": true,
+            "@value": "showResult"
+        },
+        {
+            "type": "literal",
+            "property_id": 1696,
+            "property_label": "actionApplication",
+            "is_public": true,
+            "@value": "showEnd"
+        }
+    ],
+    "oa:Annotation": [
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6570",
+            "o:id": 6570
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6574",
+            "o:id": 6574
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6578",
+            "o:id": 6578
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6582",
+            "o:id": 6582
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6586",
+            "o:id": 6586
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6590",
+            "o:id": 6590
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6594",
+            "o:id": 6594
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6598",
+            "o:id": 6598
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6602",
+            "o:id": 6602
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6606",
+            "o:id": 6606
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6610",
+            "o:id": 6610
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6614",
+            "o:id": 6614
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6618",
+            "o:id": 6618
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6622",
+            "o:id": 6622
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6626",
+            "o:id": 6626
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6674",
+            "o:id": 6674
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6678",
+            "o:id": 6678
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6682",
+            "o:id": 6682
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6686",
+            "o:id": 6686
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6690",
+            "o:id": 6690
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6694",
+            "o:id": 6694
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6698",
+            "o:id": 6698
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6702",
+            "o:id": 6702
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6706",
+            "o:id": 6706
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6710",
+            "o:id": 6710
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6714",
+            "o:id": 6714
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6718",
+            "o:id": 6718
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6722",
+            "o:id": 6722
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6726",
+            "o:id": 6726
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6730",
+            "o:id": 6730
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6754",
+            "o:id": 6754
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6758",
+            "o:id": 6758
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6763",
+            "o:id": 6763
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6767",
+            "o:id": 6767
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6779",
+            "o:id": 6779
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6783",
+            "o:id": 6783
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6787",
+            "o:id": 6787
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6791",
+            "o:id": 6791
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6795",
+            "o:id": 6795
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6799",
+            "o:id": 6799
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6808",
+            "o:id": 6808
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6812",
+            "o:id": 6812
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6816",
+            "o:id": 6816
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6820",
+            "o:id": 6820
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6824",
+            "o:id": 6824
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6829",
+            "o:id": 6829
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6943",
+            "o:id": 6943
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6947",
+            "o:id": 6947
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6951",
+            "o:id": 6951
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6956",
+            "o:id": 6956
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6960",
+            "o:id": 6960
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6964",
+            "o:id": 6964
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6968",
+            "o:id": 6968
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6972",
+            "o:id": 6972
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6977",
+            "o:id": 6977
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6981",
+            "o:id": 6981
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6985",
+            "o:id": 6985
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6989",
+            "o:id": 6989
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6993",
+            "o:id": 6993
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/6998",
+            "o:id": 6998
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7003",
+            "o:id": 7003
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7007",
+            "o:id": 7007
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7011",
+            "o:id": 7011
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7015",
+            "o:id": 7015
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7019",
+            "o:id": 7019
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7239",
+            "o:id": 7239
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7273",
+            "o:id": 7273
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7384",
+            "o:id": 7384
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7388",
+            "o:id": 7388
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7392",
+            "o:id": 7392
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7396",
+            "o:id": 7396
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7400",
+            "o:id": 7400
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7406",
+            "o:id": 7406
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7409",
+            "o:id": 7409
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7413",
+            "o:id": 7413
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7417",
+            "o:id": 7417
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7421",
+            "o:id": 7421
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7595",
+            "o:id": 7595
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7599",
+            "o:id": 7599
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7603",
+            "o:id": 7603
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7607",
+            "o:id": 7607
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7713",
+            "o:id": 7713
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7717",
+            "o:id": 7717
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7721",
+            "o:id": 7721
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7725",
+            "o:id": 7725
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7729",
+            "o:id": 7729
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7834",
+            "o:id": 7834
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7838",
+            "o:id": 7838
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7842",
+            "o:id": 7842
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7846",
+            "o:id": 7846
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7850",
+            "o:id": 7850
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7951",
+            "o:id": 7951
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7955",
+            "o:id": 7955
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7959",
+            "o:id": 7959
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7963",
+            "o:id": 7963
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/7967",
+            "o:id": 7967
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8072",
+            "o:id": 8072
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8076",
+            "o:id": 8076
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8080",
+            "o:id": 8080
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8084",
+            "o:id": 8084
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8088",
+            "o:id": 8088
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8193",
+            "o:id": 8193
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8197",
+            "o:id": 8197
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8201",
+            "o:id": 8201
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8205",
+            "o:id": 8205
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8209",
+            "o:id": 8209
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8319",
+            "o:id": 8319
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8323",
+            "o:id": 8323
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8327",
+            "o:id": 8327
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8331",
+            "o:id": 8331
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8335",
+            "o:id": 8335
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8447",
+            "o:id": 8447
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8451",
+            "o:id": 8451
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8455",
+            "o:id": 8455
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8459",
+            "o:id": 8459
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8463",
+            "o:id": 8463
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8568",
+            "o:id": 8568
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8572",
+            "o:id": 8572
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8576",
+            "o:id": 8576
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8580",
+            "o:id": 8580
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8584",
+            "o:id": 8584
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8631",
+            "o:id": 8631
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8635",
+            "o:id": 8635
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8639",
+            "o:id": 8639
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8643",
+            "o:id": 8643
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8647",
+            "o:id": 8647
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8736",
+            "o:id": 8736
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8741",
+            "o:id": 8741
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8744",
+            "o:id": 8744
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8748",
+            "o:id": 8748
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8752",
+            "o:id": 8752
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8778",
+            "o:id": 8778
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8781",
+            "o:id": 8781
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8786",
+            "o:id": 8786
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8789",
+            "o:id": 8789
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8793",
+            "o:id": 8793
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8870",
+            "o:id": 8870
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8874",
+            "o:id": 8874
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8879",
+            "o:id": 8879
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8882",
+            "o:id": 8882
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8886",
+            "o:id": 8886
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8911",
+            "o:id": 8911
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8915",
+            "o:id": 8915
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8919",
+            "o:id": 8919
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8923",
+            "o:id": 8923
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8927",
+            "o:id": 8927
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8934",
+            "o:id": 8934
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8937",
+            "o:id": 8937
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8940",
+            "o:id": 8940
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8944",
+            "o:id": 8944
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/8948",
+            "o:id": 8948
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9057",
+            "o:id": 9057
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9059",
+            "o:id": 9059
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9060",
+            "o:id": 9060
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9066",
+            "o:id": 9066
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9069",
+            "o:id": 9069
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9161",
+            "o:id": 9161
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9164",
+            "o:id": 9164
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9167",
+            "o:id": 9167
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9172",
+            "o:id": 9172
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9173",
+            "o:id": 9173
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9321",
+            "o:id": 9321
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9325",
+            "o:id": 9325
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9329",
+            "o:id": 9329
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9333",
+            "o:id": 9333
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9337",
+            "o:id": 9337
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9453",
+            "o:id": 9453
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9457",
+            "o:id": 9457
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9461",
+            "o:id": 9461
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9465",
+            "o:id": 9465
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9469",
+            "o:id": 9469
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9584",
+            "o:id": 9584
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9588",
+            "o:id": 9588
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9592",
+            "o:id": 9592
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9596",
+            "o:id": 9596
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9600",
+            "o:id": 9600
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9610",
+            "o:id": 9610
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9614",
+            "o:id": 9614
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9618",
+            "o:id": 9618
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9622",
+            "o:id": 9622
+        },
+        {
+            "@id": "http://localhost/polemika/omk/api/annotations/9626",
+            "o:id": 9626
+        }
+    ]
+}

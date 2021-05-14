@@ -1,0 +1,100 @@
+{
+    "@context": "http://localhost/polemika/omk/api-context",
+    "@id": "http://localhost/polemika/omk/api/items/6548",
+    "@type": [
+        "o:Item",
+        "jdc:Crible"
+    ],
+    "o:id": 6548,
+    "o:is_public": true,
+    "o:owner": {
+        "@id": "http://localhost/polemika/omk/api/users/1",
+        "o:id": 1
+    },
+    "o:resource_class": {
+        "@id": "http://localhost/polemika/omk/api/resource_classes/1325",
+        "o:id": 1325
+    },
+    "o:resource_template": {
+        "@id": "http://localhost/polemika/omk/api/resource_templates/37",
+        "o:id": 37
+    },
+    "o:thumbnail": null,
+    "o:title": "rapports aux émotions",
+    "o:created": {
+        "@value": "2021-03-01T08:22:28+00:00",
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+    },
+    "o:modified": {
+        "@value": "2021-03-01T11:40:43+00:00",
+        "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+    },
+    "o:media": [],
+    "o:item_set": [],
+    "dcterms:title": [
+        {
+            "type": "literal",
+            "property_id": 1,
+            "property_label": "Title",
+            "is_public": true,
+            "@value": "rapports aux émotions"
+        }
+    ],
+    "jdc:hasCrible": [
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6549",
+            "value_resource_id": 6549,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6549",
+            "display_title": "Pertinence"
+        },
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6552",
+            "value_resource_id": 6552,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6552",
+            "display_title": "Valence"
+        },
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6555",
+            "value_resource_id": 6555,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6555",
+            "display_title": "Concernement"
+        },
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6558",
+            "value_resource_id": 6558,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6558",
+            "display_title": "Contrôle"
+        },
+        {
+            "type": "resource",
+            "property_id": 2161,
+            "property_label": "a comme crible",
+            "is_public": true,
+            "@id": "http://localhost/polemika/omk/api/items/6561",
+            "value_resource_id": 6561,
+            "value_resource_name": "items",
+            "url": "/polemika/omk/admin/item/6561",
+            "display_title": "Partage"
+        }
+    ]
+}

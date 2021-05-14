@@ -1,0 +1,83 @@
+{
+    "o:label": "Concept dans crible",
+    "o:resource_template_property": [
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "title",
+            "label": "Title"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "valuesuggest:ieml:label",
+            "data_type_label": "IEML : Information Economy Meta-Language",
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genex#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'expressions",
+            "local_name": "hasRefIeml",
+            "label": "A comme r\u00e9f\u00e9rence IEML"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "valuesuggest:wikidata:concept",
+            "data_type_label": "Wikidata : concept",
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genex#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'expressions",
+            "local_name": "hasRefWikidata",
+            "label": "A comme r\u00e9f\u00e9rence Wikidata"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "valuesuggest:crisco:synonymes",
+            "data_type_label": "Crisco: Dictionnaire Electronique des Synonymes (DES)",
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genex#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'expressions",
+            "local_name": "hasSynonyme",
+            "label": "A comme synonyme"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "prefLabel",
+            "label": "preferred label"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "inScheme",
+            "label": "is in scheme"
+        }
+    ],
+    "o:resource_class": {
+        "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+        "vocabulary_label": "SKOS",
+        "local_name": "Concept",
+        "label": "Concept"
+    }
+}

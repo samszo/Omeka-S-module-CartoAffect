@@ -1,88 +1,80 @@
 <?php
 namespace CartoAffect\View\Helper;
 
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
+use Laminas\View\Helper\Identity;
+use DateTime;
 
 class CartoAffectViewHelper extends AbstractHelper
 {
 
     protected $api;
+    protected $auth;
+    protected $config;
     protected $customVocab;
+    protected $p;
+    protected $actant;
 
-    public function __construct($api)
+    public function __construct($api, $auth, $config)
     {
       $this->api = $api;
+      $this->auth = $auth;
+      $this->config = $config;
     }
 
     public function __invoke($data)
     {
-      //récupère le concept
-      if(isset($data['itemCpt']))$concept=$data['itemCpt'];
-      else $concept = $this->api->read('items', $data['idCpt'])->getContent();
 
       //récupère l'actant
-      //TODO:gérer la création d'un utilisateur anonyme
-      if(!$data['user'])$data['user']=$this->api->read('users', ['email'=>'anonyme.cartoaffect@univ-paris8.fr'])->getContent();
-      $userUri = 'http://'.$_SERVER['SERVER_NAME'].str_replace(['item',$concept->id()],['user',$data['user']->getId()],$concept->adminUrl());
-      $actant = $this->ajouteActant($data['user'],$userUri);
+      $this->actant = $this->ajouteActant($data['user']);
+      //remplace l'identifiant de l'utilisateur par l'actant
+      $data['view']['rapports']['ma:hasCreator'][0]['value']=$this->actant->id();
+      $data['view']['rapports']['jdc:hasActant'][0]['value']=$this->actant->id();
 
-      //récupère la position sémantique
+      //récupère la position sémantique suivant le ressource template
       $position = false;
-      if(isset($data['rapports'])){
-          //traitement suivant le ressource template
-          switch ($data['idRt']) {
-            case $data['themeSetting']['rt_idRapport']:
-              $position = $this->ajouteSemanticPosition($actant, $concept, $data);        
-              break;
-            case $data['themeSetting']['rt_idSonar']:
-              $position = $this->ajouteSonarPosition($actant, $concept, $data);        
-            break;
-          }        
-      }
-      //$anno = $this->ajouteAnnotation($concept, $this->actant, $dst);
-      return ['actant'=>$actant, 'position'=>$position];
+      switch ($data['view']['rt']) {
+        case 'Position sémantique : sonar':
+          $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
+        break;
+        case 'Position sémantique : Geneva Emotion':
+          $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
+        break;
+        case 'Position sémantique : Geneva Emotion corrections':
+          $position = $this->ajoutePositionCorrections($data['view'], $data['view']['rt']);        
+        break;
+        case 'Processus CartoAffect':
+          $position = $this->ajouteProcessus($data['view']);        
+        break;
+        case 'menu-qualification':
+          $position = $this->ajouteSonarPosition($data['view']);        
+        break;
+        }
+      //vérifie s'il faut déconnecter annonyme
+      if(isset($data['user']) && $data['user']->getEmail()==$this->config['CartoAffect']['config']['cartoaffect_mail'])$this->auth->clearIdentity();
+
+      return $position;
     }
 
-
-     /** Ajoute une position sémantique SONAR
+     /** Ajoute un processus de cartographie
      *
-     * @param o:item  $this->actant
-     * @param o:item  $concept
      * @param array   $data
      * @return o:item
      */
-    protected function ajouteSonarPosition ($actant, $concept, $data)
+    protected function ajouteProcessus ($data)
     {
-
-      $ref = "SonarPosition:".$concept->id()."-".$actant->id();
-      $rt =  $this->api->read('resource_templates', $data['idRt'])->getContent();
-      $rc =  $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
-      //pas de mise à jour des positions
-      $oItem = [];
-      $oItem['o:resource_class'] = ['o:id' => $rc->id()];
-      $oItem['o:resource_template'] = ['o:id' => $rt->id()];
-      foreach ($rt->resourceTemplateProperties() as $p) {
-        $oP = $p->property();
-        if(isset($data['rapports'][$oP->term()])){
-          $val = $data['rapports'][$oP->term()];
-          if(is_string($val))$val=[$val];
-          foreach ($val as $v) {
-            if(!is_string($v) && $v['type']=='resource'){
-              $valueObject = [];
-              $valueObject['value_resource_id']=$v['value'];        
-              $valueObject['property_id']=$oP->id();
-              $valueObject['type']='resource';    
-              $oItem[$oP->term()][] = $valueObject;    
-            }else{
-              $valueObject = [];
-              $valueObject['@value'] = $v;
-              $valueObject['type'] = 'literal';
-              $valueObject['property_id']=$oP->id();
-              $oItem[$oP->term()][] = $valueObject; 
-            } 
-          }  
-        }
-      }
+      $rt =  $this->api->search('resource_templates', ['label' => 'Processus CartoAffect'])->getContent()[0];
+      $rc =  $this->api->search('resource_classes', ['term' => 'schema:Action'])->getContent()[0];
+      //création de l'action
+      $d = new DateTime('NOW');
+      $dt = [
+        'dcterms:title'=>$data['actionApplication']->displayTitle().' - '.$this->actant->displayTitle().' : '.$d->format('Y-m-d')
+        ,'dcterms:isReferencedBy'=>$data['actionApplication']->id().'_'.$this->actant->id().'_'.$d->format('U')
+        ,'schema:actionApplication'=>[0=>['value'=>$data['actionApplication']->id()]]
+        ,'dcterms:created'=>$d->format('c')
+        ,'jdc:hasActant'=>[0=>['value'=>$this->actant->id()]]
+      ];
+      $oItem = $this->setData($dt,$rt, $rc);
       $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
       
       return $result;      
@@ -90,102 +82,128 @@ class CartoAffectViewHelper extends AbstractHelper
     }
 
 
-     /** Ajoute une position sémantique
+
+     /** Ajoute les correction à une position sémantique
      *
-     * @param o:item  $this->actant
-     * @param o:item  $concept
-     * @param array   $rapports
+     * @param array   $data
+     * @param string  $rtName
      * @return o:item
      */
-    protected function ajouteSemanticPosition($actant, $concept, $data)
+    protected function ajoutePositionCorrections ($data, $rtName)
     {
-
-      $ref = "SemanticPosition:".$concept->id()."-".$actant->id();
-      $rt =  $this->api->read('resource_templates', $data['idRt'])->getContent();
+      $rt =  $this->api->search('resource_templates', ['label' => $rtName])->getContent()[0];
       $rc =  $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
-      $pIRB =  $this->api->search('properties', ['term' => 'dcterms:isReferencedBy',])->getContent()[0];
-      //création ou mise à jour
-      $param = array();
-      $param['property'][0]['property']= $pIRB->id()."";
-      $param['property'][0]['type']='eq';
-      $param['property'][0]['text']=$ref; 
-      $existe = $this->api->search('items',$param)->getContent();
-      $bExiste = count($existe);
-        $oItem = [];
-        if(!$bExiste){
-          $oItem['o:resource_class'] = ['o:id' => $rc->id()];
-          $oItem['o:resource_template'] = ['o:id' => $rt->id()];
-        foreach ($rt->resourceTemplateProperties() as $p) {
-          $oP = $p->property();
-          switch ($oP->term()) {
-            case 'dcterms:isReferencedBy':
-              $valueObject = [];
-              $valueObject['@value'] = $ref;
-              $valueObject['type'] = 'literal';
-              $valueObject['property_id']=$oP->id();
-              $oItem[$oP->term()][] = $valueObject; 
-              break;            
-            case 'dcterms:title':
-              $valueObject = [];
-              $valueObject['@value'] = "Position sémantique de « ".$concept->displayTitle()." » par ".$actant->displayTitle();
-              $valueObject['type'] = 'literal';
-              $valueObject['property_id']=$oP->id();
-              $oItem[$oP->term()][] = $valueObject;    
-              break;            
-            case 'dcterms:creator':
-              $valueObject = [];
-              $valueObject['value_resource_id']=$actant->id();        
-              $valueObject['property_id']=$oP->id();
-              $valueObject['type']='resource';    
-              $oItem[$oP->term()][] = $valueObject;    
-              break;            
-            case 'oa:hasSource':
-              $valueObject = [];
-              $valueObject['value_resource_id']=$concept->id();        
-              $valueObject['property_id']=$oP->id();
-              $valueObject['type']='resource';    
-              $oItem[$oP->term()][] = $valueObject;    
-              break;     
-            default:
-
-          }
+      //pas de mise à jour des positions
+      foreach ($data['rapports'] as $k => $r) {
+        if(is_int($k)){
+          $r['jdc:hasActant']=$data['rapports']['jdc:hasActant'];
+          $r['ma:hasCreator']=$data['rapports']['ma:hasCreator'];
+          $oItem = $this->setData($r,$rt, $rc);
+          $result[] = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();  
         }
-        $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
       }
-      //ajoute ou modifie les rapports au propriété
-      foreach ($data['rapports'] as $r) {
-        $oItem = [];
-        $oP =  $this->api->search('properties', ['term' => $r['rapport']['term']])->getContent()[0];
-        $valueObject = [];
-        $valueObject['value_resource_id']=$r['id'];        
-        $valueObject['property_id']=$oP->id();
-        $valueObject['type']='resource';    
-        $oItem[$oP->term()][] = $valueObject; 
-        $itemId = $bExiste ? $existe[0]->id() : $result->id();
-        $rslt = $this->api->update('items', $itemId, $oItem, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => $r['rapport']['action']]);
-        unset($oItem[$oP->term()]);
-      }
-
-      return $rslt;
+      
+      return $result;      
 
     }
+    
+
+
+     /** Ajoute une position sémantique SONAR
+     *
+     * @param array   $data
+     * @param string  $rtName
+     * @return o:item
+     */
+    protected function ajouteSonarPosition ($data, $rtName)
+    {
+
+      $rt =  $this->api->search('resource_templates', ['label' => $rtName])->getContent()[0];
+      $rc =  $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
+      //pas de mise à jour des positions
+      $oItem = $this->setData($data['rapports'],$rt, $rc);
+      $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+      $data['item']=$result;
+      $this->ajouteAnnotation($data);
+      
+      return $result;      
+
+    }
+
+     /** Construction des data pour l'API
+     *
+     * @param   array   $data
+     * @param   object  $rt
+     * @param   object  $rc
+     * @return  array
+     */
+    protected function setData($data, $rt, $rc)
+    {
+      $oItem = [];
+      $oItem['o:resource_class'] = ['o:id' => $rc->id()];
+      $oItem['o:resource_template'] = ['o:id' => $rt->id()];
+      foreach ($rt->resourceTemplateProperties() as $p) {
+        $oP = $p->property();
+        if(isset($data[$oP->term()])){
+          $val = $data[$oP->term()];
+          $oItem = $this->setValeur($val,$oP,$oItem); 
+        }
+      }
+      return $oItem;
+
+    }
+
+     /** Construction de la valeur
+     *
+     * @param   array   $val
+     * @param   object  $oP
+     * @param   array   $oItem
+     * @return  array
+     */
+    protected function setValeur($val, $oP, $oItem)
+    {
+      if(is_string($val))$val=[$val];
+      foreach ($val as $v) {
+        $valueObject = [];
+        if(!is_string($v) && $v['value']){
+          $valueObject['value_resource_id']=$v['value'];        
+          $valueObject['property_id']=$oP->id();
+          $valueObject['type']='resource';    
+        }else{
+          $valueObject['@value'] = $v;
+          $valueObject['type'] = 'literal';
+          $valueObject['property_id']=$oP->id();
+        } 
+        $oItem[$oP->term()][]=$valueObject;
+      }
+      return $oItem;  
+
+    }
+
 
      /** Ajoute un actant
      *
      * @param object $user
-     * @param string $urlAdmin
      * @return o:item
      */
-    protected function ajouteActant($user, $urlAdmin)
+    protected function ajouteActant($user)
     {
 
-        //vérifie la présence de l'item pour gérer les mises à jour
-        $foafAN =  $this->api->search('properties', ['term' => 'foaf:accountName'])->getContent()[0];
+      //vérifie la présence de l'item pour gérer les mises à jour
+      $foafAN =  $this->api->search('properties', ['term' => 'foaf:accountName'])->getContent()[0];
 
-        $rt =  $this->api->search('resource_templates', ['label' => 'Actant',])->getContent()[0];
-        $rc =  $this->api->search('resource_classes', ['term' => 'jdc:Actant',])->getContent()[0];
-        $foafA =  $this->api->search('properties', ['term' => 'foaf:account',])->getContent()[0];
-        $ident =  $this->api->search('properties', ['term' => 'schema:identifier',])->getContent()[0];
+      $rt =  $this->api->search('resource_templates', ['label' => 'Actant',])->getContent()[0];
+      $rc =  $this->api->search('resource_classes', ['term' => 'jdc:Actant',])->getContent()[0];
+      $foafA =  $this->api->search('properties', ['term' => 'foaf:account',])->getContent()[0];
+      $ident =  $this->api->search('properties', ['term' => 'schema:identifier',])->getContent()[0];
+
+      if(!$user){
+        $adapter = $this->auth->getAdapter();
+        $adapter->setIdentity($this->config['CartoAffect']['config']['cartoaffect_mail']);
+        $adapter->setCredential($this->config['CartoAffect']['config']['cartoaffect_pwd']);
+        $user = $this->auth->authenticate()->getIdentity();                      
+        $itemU=$this->api->read('users', ['email'=>$this->config['CartoAffect']['config']['cartoaffect_mail']])->getContent();
+      }else $itemU=$this->api->read('users',  $user->getId())->getContent();
 
         //création de l'item
         $oItem = [];
@@ -196,7 +214,7 @@ class CartoAffectViewHelper extends AbstractHelper
         $oItem[$foafA->term()][] = $valueObject;    
         $valueObject = [];
         $valueObject['property_id'] = $ident->id();
-        $valueObject['@id'] = $urlAdmin;
+        $valueObject['@id'] = $itemU->adminUrl();
         $valueObject['o:label'] = 'omeka user';
         $valueObject['type'] = 'uri';
         $oItem[$ident->term()][] = $valueObject;    
@@ -233,123 +251,140 @@ class CartoAffectViewHelper extends AbstractHelper
     /**
      * Ajoute une annotation au format open annotation
      *
-     * @param  o:item $src
-     * @param  o:item $actant
-     * @param  o:item $dst
+     * @param  array $data
+     * 
      * @return array
      */
-    protected function ajouteAnnotation($src, $actant, $dst)
+    protected function ajouteAnnotation($data)
     {
-        $ref = "idSrc:".$src->id()
-        ."_idActant:".$actant->id()
-        ."_idDst:".$dst->id();
 
         //récupère les propriétés
         $this->cacheCustomVocab();      
+        $this->cacheProperties();
         $rtA =  $this->api->search('resource_templates', ['label' => 'Annotation'])->getContent()[0];
         $rcA =  $this->api->search('resource_classes', ['term' => 'oa:Annotation'])->getContent()[0];
-        $p = [
-          'isReferencedBy' => $this->api->search('properties', ['term' => 'dcterms:isReferencedBy'])->getContent()[0],
-          'creator' => $this->api->search('properties', ['term' => 'dcterms:creator'])->getContent()[0],
-          'value' =>  $this->api->search('properties', ['term' => 'rdf:value'])->getContent()[0],
-          'type' =>  $this->api->search('properties', ['term' => 'rdf:type'])->getContent()[0],
-          'motivatedBy' =>  $this->api->search('properties', ['term' => 'oa:motivatedBy'])->getContent()[0],
-          'hasSource' =>  $this->api->search('properties', ['term' => 'oa:hasSource'])->getContent()[0],
-          'hasPurpose' =>  $this->api->search('properties', ['term' => 'oa:hasPurpose'])->getContent()[0],
-          'semanticRelation' =>  $this->api->search('properties', ['term' => 'skos:semanticRelation'])->getContent()[0],          
-        ];
         
-        //vérifie la présence de l'item pour gérer la création ou la mise à jour
-        $param = array();
-        $param['property'][0]['property']= $p['isReferencedBy']->id()."";
-        $param['property'][0]['type']='eq';
-        $param['property'][0]['text']=$ref; 
-        $result = $this->api->search('annotations',$param)->getContent();
-
-        $update = false;
-        if(count($result)){
-            $update = true;
-            $idAno = $result[0]->id();
-        }            
-
         //création de l'annotation       
         $oItem = [];
 
-        //référence
-        $valueObject = [];
-        $valueObject['property_id'] = $p['isReferencedBy']->id();
-        $valueObject['@value'] = $ref;
-        $valueObject['type'] = 'literal';
-        $oItem[$p['isReferencedBy']->term()][] = $valueObject;    
-
         //motivation
         $valueObject = [];
-        $valueObject['property_id'] = $p['motivatedBy']->id();
-        $valueObject['@value'] = 'tagging';
+        $valueObject['property_id'] = $this->p['motivatedBy']->id();
+        $valueObject['@value'] = isset($data['motivation']) ? $data['motivation'] : 'oa:tagging';
         $valueObject['type'] = 'customvocab:'.$this->customVocab['Annotation oa:motivatedBy'];
-        $oItem[$p['motivatedBy']->term()][] = $valueObject;    
+        $oItem[$this->p['motivatedBy']->term()][] = $valueObject;    
 
         //annotator = actant
-        $valueObject = [];                
-        $valueObject['value_resource_id']=$actant->id();        
-        $valueObject['property_id']=$p['creator']->id();
-        $valueObject['type']='resource';    
-        $oItem[$p['creator']->term()][] = $valueObject;    
+        if(isset($this->actant)){
+          $valueObject = [];                
+          $valueObject['value_resource_id']=$this->actant->id();        
+          $valueObject['property_id']=$this->p['creator']->id();
+          $valueObject['type']='resource';    
+          $oItem[$this->p['creator']->term()][] = $valueObject;      
+        }
 
-        //source = doc 
-        $valueObject = [];                
-        $valueObject['property_id']=$p['hasSource']->id();
-        $valueObject['type']='resource';
-        $valueObject['value_resource_id']=$src->id();
-        $oItem[$p['hasSource']->term()][] = $valueObject;    
-
-        //body = texte explicatif
-        $valueObject = [];                
-        $valueObject['rdf:value'][0]['@value']=$actant->displayTitle()
-            .' a mis en rapport le concept '.$src->displayTitle()
-            .' avec le rapport sémantique '.$dst->displayTitle();        
-        $valueObject['rdf:value'][0]['property_id']=$p['value']->id();
-        $valueObject['rdf:value'][0]['type']='literal';    
-        $valueObject['oa:hasPurpose'][0]['@value']='classifying';
-        $valueObject['oa:hasPurpose'][0]['property_id']=$this->properties["oa"]["hasPurpose"]->id();
-        $valueObject['oa:hasPurpose'][0]['type']='customvocab:'.$this->customVocab['Annotation Body oa:hasPurpose'];
-        $oItem['oa:hasBody'][] = $valueObject;    
+        //Body = doc cf. https://www.w3.org/TR/annotation-vocab/#hasselector
+        $oItem['oa:hasBody'][] = $this->getBody($data);    
 
         //target = tag 
-        $valueObject = [];                
-        $valueObject['rdf:value'][0]['value_resource_id']=$dst->id();        
-        $valueObject['rdf:value'][0]['property_id']=$p['value']->id();
-        $valueObject['rdf:value'][0]['type']='resource';    
-        $valueObject['rdf:type'][0]['@value']='o:Item';        
-        $valueObject['rdf:type'][0]['property_id']=$p["type"]->id();
-        $valueObject['rdf:type'][0]['type']='customvocab:'.$this->customVocab['Annotation Target rdf:type'];            
-        $oItem['oa:hasTarget'][] = $valueObject;    
+        $oItem['oa:hasTarget'][] = $this->getTarget($data);    
 
         //type omeka
         $oItem['o:resource_class'] = ['o:id' => $rcA->id()];
         $oItem['o:resource_template'] = ['o:id' => $rtA->id()];
 
-        if($update){
-            $result = $this->api->update('annotations', $idAno, $oItem, []
-                , ['isPartial'=>true, 'continueOnError' => true]);
-        }else{
-            //création de l'annotation
-            $result = $this->api->create('annotations', $oItem, [], ['continueOnError' => true])->getContent();        
-
-        }        
-        //met à jour l'item avec la relation
-        $param = [];
-        $valueObject = [];
-        $valueObject['property_id'] = $p["semanticRelation"]->id();
-        $valueObject['value_resource_id'] = $dst->id();
-        $valueObject['type'] = 'resource';
-        $param[$p["semanticRelation"]->term()][] = $valueObject;
-        $this->api->update('items', $src->id(), $param, []
-            , ['isPartial'=>true, 'continueOnError' => true, 'collectionAction' => 'append']);
+        //création de l'annotation
+        $result = $this->api->create('annotations', $oItem, [], ['continueOnError' => true])->getContent();        
 
         return $result;
 
     }    
+
+
+    /**
+     * creation du body pour une annotation
+     *
+     * @param  array  $data
+     * 
+     * @return array
+     */
+    protected function getBody($data)
+    {
+
+      $body = [];                
+      $val = '';               
+      //body = texte explicatif      
+      if(isset($this->actant))$val = $this->actant->displayTitle().' a mis en rapport : ';
+      if(isset($data['rapports']['jdc:hasDoc'])){
+        foreach ($data['rapports']['jdc:hasDoc'] as $d) {
+          if(!isset($d['item']))$d['item'] = $this->api->read($d['type'], $d['value'])->getContent();
+          $val .= '"'.$d['item']->displayTitle().'" ';
+
+        }
+      }
+      if(isset($data['rapports']['jdc:hasConcept'])){
+        $val .= ' avec : ';
+        $n = 0;
+        foreach ($data['rapports']['jdc:hasConcept'] as $d) {
+          if(!isset($d['item']))$d['item'] = $this->api->read($d['type'], $d['value'])->getContent();
+          if($d['type']=='properties' || $d['type']=='resource_classes')
+            $val .= '"'.$d['item']->label().'" ('.$data['rapports']['ma:hasRating'][$n].') ';
+          else
+            $val .= '"'.$d['item']->displayTitle().'" ('.$data['rapports']['ma:hasRating'][$n].') ';
+          $n++;
+        }
+      }
+      if(isset($data['rapports']['ma:hasRatingSystem'])){
+        $val .= ' du crible ';
+        foreach ($data['rapports']['ma:hasRatingSystem'] as $d) {
+          if(!isset($d['item']))$d['item'] = $this->api->read($d['type'], $d['value'])->getContent();
+          if($d['type']=='properties' || $d['type']=='resource_classes')
+            $val .= '"'.$d['item']->label().'".';
+          else
+            $val .= '"'.$d['item']->displayTitle().'".';
+        }
+      }
+      if($val){
+        $body['rdf:value'][]=['@value'=> $val,'property_id'=>$this->p['value']->id(),'type'=>'literal'];      
+      }
+
+      if(isset($data['item'])){
+        $body['rdf:value'][] = ['value_resource_id'=> $data['item']->id(),'property_id'=>$this->p['value']->id(),'type'=>'resource'];    
+      }
+
+      $body['oa:hasPurpose'][0]['@value']= isset($data['objectif']) ? $data['objectif'] : 'oa:editing';
+      $body['oa:hasPurpose'][0]['property_id']=$this->p["hasPurpose"]->id();
+      $body['oa:hasPurpose'][0]['type']='customvocab:'.$this->customVocab['Annotation Body oa:hasPurpose'];
+      
+      return $body;
+    }
+
+    /**
+     * creation de la target pour une annotation
+     *
+     * @param  array  $data
+     * @return array
+     */
+    protected function getTarget($data)
+    {
+      $target = [];                
+      foreach ($data['rapports']['jdc:hasDoc'] as $d) {
+        $valueObject = [];                
+        $valueObject['property_id']=$this->p['hasSource']->id();
+        $valueObject['type']='resource';
+        $valueObject['value_resource_id']=$d['value'];
+        $target[$this->p['hasSource']->term()][] = $valueObject;    
+      }
+      foreach ($data['rapports']['jdc:hasDoc'] as $d) {
+        $valueObject = []; 
+        $valueObject['property_id']=$this->p['hasSource']->id();
+        $valueObject['type']='resource';
+        $valueObject['value_resource_id']=$d['value'];  
+        $body[$this->p['hasSource']->term()][] = $valueObject;
+      }
+
+      return $target;
+    }
 
     /**
      * Cache custom vocab.
@@ -365,5 +400,21 @@ class CartoAffectViewHelper extends AbstractHelper
         }
     }
 
+    /**
+     * Cache properties.
+     */
+    protected function cacheProperties()
+    {
+
+      $this->p = [
+        'creator' => $this->api->search('properties', ['term' => 'dcterms:creator'])->getContent()[0],
+        'value' =>  $this->api->search('properties', ['term' => 'rdf:value'])->getContent()[0],
+        'type' =>  $this->api->search('properties', ['term' => 'rdf:type'])->getContent()[0],
+        'motivatedBy' =>  $this->api->search('properties', ['term' => 'oa:motivatedBy'])->getContent()[0],
+        'hasSource' =>  $this->api->search('properties', ['term' => 'oa:hasSource'])->getContent()[0],
+        'hasPurpose' =>  $this->api->search('properties', ['term' => 'oa:hasPurpose'])->getContent()[0],
+        'semanticRelation' =>  $this->api->search('properties', ['term' => 'skos:semanticRelation'])->getContent()[0],          
+      ];
+    }
 
 }

@@ -1,0 +1,8 @@
+o:id,o:resource_class,dcterms:title,dcterms:isReferencedBy,jdc:hasCrible,jdc:hasCribleCarto
+7300,jdc:Crible,Emotions Geneva,https://www.researchgate.net/publication/280880848_Geneva_Emotion_Wheel_Rating_Study,6558 | 6552,emotionsGeneva
+6561,jdc:Crible,Partage,,,
+6558,jdc:Crible,Contrôle,,,
+6555,jdc:Crible,Concernement,,,
+6552,jdc:Crible,Valence,,,
+6549,jdc:Crible,Pertinence,,,
+6548,jdc:Crible,rapports aux émotions,,6549 | 6552 | 6555 | 6558 | 6561,

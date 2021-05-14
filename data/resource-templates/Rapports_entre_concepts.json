@@ -1,0 +1,143 @@
+{
+    "o:label": "Rapports entre concepts",
+    "o:resource_template_property": [
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "title",
+            "label": "Title"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "creator",
+            "label": "Creator"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": null,
+            "data_type_label": null,
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "isReferencedBy",
+            "label": "Is Referenced By"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "def",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "altLabel",
+            "label": "alternative label"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "def",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "prefLabel",
+            "label": "preferred label"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "hiddenLabel",
+            "label": "hidden label"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": ">",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "broader",
+            "label": "has broader"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "-",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "closeMatch",
+            "label": "has close match"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "=",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "exactMatch",
+            "label": "has exact match"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "<",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "narrower",
+            "label": "has narrower"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": "-",
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_type_name": "resource:item",
+            "data_type_label": "Item",
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/2004\/02\/skos\/core#",
+            "vocabulary_label": "SKOS",
+            "local_name": "related",
+            "label": "has related"
+        }
+    ],
+    "o:resource_class": {
+        "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/jdc#",
+        "vocabulary_label": "Jardin des connaissances",
+        "local_name": "SemanticPosition",
+        "label": "SemanticPosition"
+    }
+}

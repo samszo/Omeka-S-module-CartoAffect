@@ -3,16 +3,15 @@ namespace CartoAffect\Service\ViewHelper;
 
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use CartoAffect\View\Helper\CartoAffectViewHelper;
+use CartoAffect\View\Helper\CribleViewHelper;
 
-class CartoAffectFactory implements FactoryInterface
+class CribleFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $api = $services->get('Omeka\ApiManager');
-        $auth = $services->get('Omeka\AuthenticationService');
-        $config = $services->get('Config');
+        $conn = $services->get('Omeka\Connection');
 
-        return new CartoAffectViewHelper($api, $auth, $config);
+        return new CribleViewHelper($api, $conn);
     }
 }
