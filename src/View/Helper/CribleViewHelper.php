@@ -205,7 +205,7 @@ class CribleViewHelper extends AbstractHelper
             $param = array();
             $param['property'][0]['property']= $this->inScheme->id()."";
             $param['property'][0]['type']='res';
-            $param['property'][0]['text']=$c->id();
+            $param['property'][0]['text']=$c->id()."";
             $param['sort_by']="jdc:ordreCrible";
             $param['sort_order']="asc";   
             $concepts = $this->api->search('items',$param)->getContent();

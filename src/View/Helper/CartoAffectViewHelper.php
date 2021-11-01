@@ -48,12 +48,42 @@ class CartoAffectViewHelper extends AbstractHelper
         break;
         case 'menu-qualification':
           $position = $this->ajouteSonarPosition($data['view']);        
-        break;
+          case 'changeItemItemSet':
+            $position = $this->changeItemItemSet($data['view']);        
+          break;        
+          default:
+            $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
+          break;
         }
       //vérifie s'il faut déconnecter annonyme
       if(isset($data['user']) && $data['user']->getEmail()==$this->config['CartoAffect']['config']['cartoaffect_mail'])$this->auth->clearIdentity();
 
       return $position;
+    }
+/** Modifie le rapport entre item et itemSet
+     *
+     * @param array   $data
+     * @return object
+     */
+    protected function changeItemItemSet ($data)
+    {
+      $item = $this->api->read('items', $data['id'])->getContent();
+      if($data['checked']=='true'){
+        $params['o:item_set'] = [
+          ['o:id' => $data['isId']]
+        ];  
+        $result = $this->api->update('items', $data['id'], $params, [], ['isPartial'=>1, 'collectionAction' => 'append'])->getContent();
+        $result = $this->api->read('item_sets', $data['isId'])->getContent();         
+      }else{
+        $itemSets = $item->itemSets();
+        $params['o:item_set'] = [];
+        foreach ($itemSets as $is) {
+          if($is->id()!=$data['isId'])$params['o:item_set'][] = ['o:id' => $is->id()];
+        }        
+        $result = $this->api->update('items', $data['id'], $params, [], ['isPartial'=>1, 'collectionAction' => 'replace'])->getContent();  
+      }
+
+      return $result;
     }
 
      /** Ajoute un processus de cartographie
