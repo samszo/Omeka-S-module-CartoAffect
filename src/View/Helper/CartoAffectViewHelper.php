@@ -25,42 +25,96 @@ class CartoAffectViewHelper extends AbstractHelper
     public function __invoke($data)
     {
 
+      if(isset($data['getActantAnonyme'])){
+        $actant = $this->getActantAnonyme();       
+        $this->auth->clearIdentity();
+        return $actant;
+      }
+
       //récupère l'actant
       $this->actant = $this->ajouteActant($data['user']);
+
       //remplace l'identifiant de l'utilisateur par l'actant
-      $data['view']['rapports']['ma:hasCreator'][0]['value']=$this->actant->id();
-      $data['view']['rapports']['jdc:hasActant'][0]['value']=$this->actant->id();
+      $data['post']['rapports']['ma:hasCreator'][0]['value']=$this->actant->id();
+      $data['post']['rapports']['jdc:hasActant'][0]['value']=$this->actant->id();
+
+      $position = false;
+
+      switch ($data['query']['type']) {
+        case 'getPosis':
+          $position = $this->getPositions($data['query']['idDoc'], $this->actant->id(), $data['query']['idCrible']);        
+          break;
+      }
+
 
       //récupère la position sémantique suivant le ressource template
-      $position = false;
-      switch ($data['view']['rt']) {
-        case 'Position sémantique : sonar':
-          $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
-        break;
-        case 'Position sémantique : Geneva Emotion':
-          $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
-        break;
-        case 'Position sémantique : Geneva Emotion corrections':
-          $position = $this->ajoutePositionCorrections($data['view'], $data['view']['rt']);        
-        break;
-        case 'Processus CartoAffect':
-          $position = $this->ajouteProcessus($data['view']);        
-        break;
-        case 'menu-qualification':
-          $position = $this->ajouteSonarPosition($data['view']);        
-          case 'changeItemItemSet':
-            $position = $this->changeItemItemSet($data['view']);        
-          break;        
-          default:
-            $position = $this->ajouteSonarPosition($data['view'], $data['view']['rt']);        
+      if(isset($data['post']['rt'])){
+        switch ($data['post']['rt']) {
+          case 'Position sémantique : sonar':
+            $position = $this->ajouteSonarPosition($data['post'], $data['post']['rt']);
+            $position = $this->getPositions($position->value('jdc:hasDoc')->valueResource()->id(), $this->actant->id(), $position->value('ma:hasRatingSystem')->valueResource()->id());           
           break;
-        }
+          case 'Position sémantique : Geneva Emotion':
+            $position = $this->ajouteSonarPosition($data['post'], $data['post']['rt']);        
+          break;
+          case 'Position sémantique : Geneva Emotion corrections':
+            $position = $this->ajoutePositionCorrections($data['post'], $data['post']['rt']);        
+          break;
+          case 'Processus CartoAffect':
+            $position = $this->ajouteProcessus($data['post']);        
+          break;
+          case 'menu-qualification':
+            $position = $this->ajouteSonarPosition($data['post']);        
+          case 'changeItemItemSet':
+            $position = $this->changeItemItemSet($data['post']);        
+          break;        
+            default:
+              $position = $this->ajouteSonarPosition($data['post'], $data['post']['rt']);        
+            break;
+          }
+      }
       //vérifie s'il faut déconnecter annonyme
       if(isset($data['user']) && $data['user']->getEmail()==$this->config['CartoAffect']['config']['cartoaffect_mail'])$this->auth->clearIdentity();
 
       return $position;
     }
-/** Modifie le rapport entre item et itemSet
+
+    /**
+     * Récupère le position sonar pour un doc, un actant et un crible
+     *
+     * @param integer               $idDoc      
+     * @param integer               $idActant
+     * @param integer               $idCrible
+     * 
+     * @return array
+     */
+    protected function getPositions($idDoc, $idActant, $idCrible)
+    {
+        //requête pour récupèrer les positions pour un crible et un document      
+        $pHasDoc = $this->api->search('properties', ['term' => 'jdc:hasDoc'])->getContent()[0];
+        $pHasRatingSystem = $this->api->search('properties', ['term' => 'ma:hasRatingSystem'])->getContent()[0];
+        $pHasActant = $this->api->search('properties', ['term' => 'jdc:hasActant'])->getContent()[0];
+
+        $query = array();
+        $query['property'][0]['property']= $pHasDoc->id();
+        $query['property'][0]['type']='res';
+        $query['property'][0]['text']=$idDoc; 
+        $query['property'][0]['joiner']="and"; 
+        $query['property'][1]['property']= $pHasRatingSystem->id();
+        $query['property'][1]['type']='res';
+        $query['property'][1]['text']=$idCrible; 
+        $query['property'][1]['joiner']="and"; 
+        $query['property'][1]['property']= $pHasActant->id();
+        $query['property'][1]['type']='res';
+        $query['property'][1]['text']=$idActant; 
+        $query['property'][1]['joiner']="and"; 
+
+        $result = $this->api->search('items', $query)->getContent();
+
+        return $result;
+    }
+
+    /** Modifie le rapport entre item et itemSet
      *
      * @param array   $data
      * @return object
@@ -210,6 +264,19 @@ class CartoAffectViewHelper extends AbstractHelper
 
     }
 
+     /** récupère l'actant anonyme
+     *
+     * @return array
+     */
+    protected function getActantAnonyme()
+    {
+      $adapter = $this->auth->getAdapter();
+      $adapter->setIdentity($this->config['CartoAffect']['config']['cartoaffect_mail']);
+      $adapter->setCredential($this->config['CartoAffect']['config']['cartoaffect_pwd']);
+      $user = $this->auth->authenticate()->getIdentity();                      
+      return $this->api->read('users', ['email'=>$this->config['CartoAffect']['config']['cartoaffect_mail']])->getContent();
+  }
+
 
      /** Ajoute un actant
      *
@@ -227,13 +294,8 @@ class CartoAffectViewHelper extends AbstractHelper
       $foafA =  $this->api->search('properties', ['term' => 'foaf:account',])->getContent()[0];
       $ident =  $this->api->search('properties', ['term' => 'schema:identifier',])->getContent()[0];
 
-      if(!$user){
-        $adapter = $this->auth->getAdapter();
-        $adapter->setIdentity($this->config['CartoAffect']['config']['cartoaffect_mail']);
-        $adapter->setCredential($this->config['CartoAffect']['config']['cartoaffect_pwd']);
-        $user = $this->auth->authenticate()->getIdentity();                      
-        $itemU=$this->api->read('users', ['email'=>$this->config['CartoAffect']['config']['cartoaffect_mail']])->getContent();
-      }else $itemU=$this->api->read('users',  $user->getId())->getContent();
+      if(!$user)$user=$this->getActantAnonyme();
+      $itemU=$this->api->read('users',  $user->getId())->getContent();
 
         //création de l'item
         $oItem = [];
@@ -287,6 +349,7 @@ class CartoAffectViewHelper extends AbstractHelper
      */
     protected function ajouteAnnotation($data)
     {
+        if(!$this->config['CartoAffect']['config']['ajouteAnnotation'])return;
 
         //récupère les propriétés
         $this->cacheCustomVocab();      
