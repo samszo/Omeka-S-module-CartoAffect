@@ -9,12 +9,16 @@ return [
             'CartoAffectViewHelper' => View\Helper\CartoAffectViewHelper::class,
             'CribleViewHelper' => View\Helper\CribleViewHelper::class,
             'EntityRelationViewHelper' => View\Helper\EntityRelationViewHelper::class,
+            'QuerySqlViewHelper' => View\Helper\QuerySqlViewHelper::class,
+            'DiagrammeViewHelper' => View\Helper\DiagrammeViewHelper::class,
         ],
                 
         'factories'  => [
             'CartoAffectFactory' => Service\ViewHelper\CartoAffectFactory::class,
             'CribleFactory' => Service\ViewHelper\CribleFactory::class,
             'EntityRelationFactory' => Service\ViewHelper\EntityRelationFactory::class,
+            'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
+            'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
         ],
 
     ],
