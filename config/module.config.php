@@ -30,7 +30,8 @@ return [
     'CartoAffect' => [
         'config' => [
             'cartoaffect_mail' => 'anonyme.polemika@univ-paris8.fr',
-            'cartoaffect_pwd' => 'anonyme'
+            'cartoaffect_pwd' => 'anonyme',
+            'ajouteAnnotation'=> 1
         ],
     ],
 

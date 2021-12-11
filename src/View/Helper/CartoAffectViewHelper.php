@@ -40,7 +40,7 @@ class CartoAffectViewHelper extends AbstractHelper
 
       $position = false;
 
-      switch ($data['query']['type']) {
+      switch (isset($data['query']) && $data['query']['type']) {
         case 'getPosis':
           $position = $this->getPositions($data['query']['idDoc'], $this->actant->id(), $data['query']['idCrible']);        
           break;
@@ -64,7 +64,7 @@ class CartoAffectViewHelper extends AbstractHelper
             $position = $this->ajouteProcessus($data['post']);        
           break;
           case 'menu-qualification':
-            $position = $this->ajouteSonarPosition($data['post']);        
+            $position = $this->ajouteSonarPosition($data['post'],$data['post']['rt']);        
           case 'changeItemItemSet':
             $position = $this->changeItemItemSet($data['post']);        
           break;        

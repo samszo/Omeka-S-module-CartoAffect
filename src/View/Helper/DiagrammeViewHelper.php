@@ -18,7 +18,9 @@ class DiagrammeViewHelper extends AbstractHelper
     protected $links;
     protected $url;
     protected $user;
-    protected $styleDefault="border-color:#274e13;background-color:#d9ead3;color:#000000;border-width:3px;font-weight:none;font-style:none";
+    protected $styleNodeSrcDefault="border-color:#ff0000;background-color:#000000;color:#ffffff;border-width:3px;font-weight:none;font-style:none ";
+    protected $styleNodeDstDefault="border-color:green;background-color:#ffffff;color:#000000;border-width:3px;font-weight:none;font-style:none";
+    protected $styleLinkDefault='{"from-pos":"center","to-pos":"center","from-pos":"center","to-pos":"center","color":"#000000","lineStyle":""}';
 
     public function __construct($api,$serverUrlHelper,$acl)
     {
@@ -75,11 +77,10 @@ class DiagrammeViewHelper extends AbstractHelper
     function changeDiagramme($params){
         $result = [];
         $this->user = $params['user']; 
-        foreach ($params['post'] as $k => $vs) {
-            foreach ($vs as $v) {
-                //$oDiagram = $this->api->read('items', $v['idDiagram'])->getContent();
-                $rs = $this->acl->userIsAllowed(null,'update');//$oDiagram->userIsAllowed('update');//         
-                if($rs){
+        $rs = $this->acl->userIsAllowed(null,'update');
+        if($rs){
+            foreach ($params['post'] as $k => $vs) {
+                foreach ($vs as $v) {
                     switch ($k.$v['kind']) {
                         case 'updatedarchetype':
                             $result[]=$this->saveArchetype($v);
@@ -98,10 +99,10 @@ class DiagrammeViewHelper extends AbstractHelper
                             $result[]=$this->deleteGeo($v);
                         break;
                     }        
-                }else{
-                    $result[]=['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de modifier ce diagramme."];    
                 }
             }
+        }else{
+            $result=['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de modifier ce diagramme."];    
         }
 
 
@@ -128,8 +129,12 @@ class DiagrammeViewHelper extends AbstractHelper
                 'property_id'=>$this->getProp('dcterms:title')->id()];
             $data['dcterms:created'][]=['@value'=>$d->format('c'),'property_id'=>$this->getProp('dcterms:created')->id(),'type'=>'literal'];            
             $oItem = $this->api->create('items', $data, [], ['continueOnError' => true])->getContent();
-            //ajoute un premier node
-            $this->createNode(['idDiagram'=>$oItem->id(),'kind'=>'node','label'=>'nouveau noeud','x'=>'200','y'=>'200','cssStyle'=>$this->styleDefault]);        
+            //ajoute un noeud source
+            $src = $this->createNode(['idDiagram'=>$oItem->id(),'kind'=>'node','label'=>'source','x'=>'200','y'=>'200','cssStyle'=>$this->styleNodeSrcDefault]);        
+            //ajoute un noeud destination
+            $dst = $this->createNode(['idDiagram'=>$oItem->id(),'kind'=>'node','label'=>'destination','x'=>'400','y'=>'200','cssStyle'=>$this->styleNodeDstDefault]);        
+            //ajoute un lien source->destination
+            $this->createLink(['idDiagram'=>$oItem->id(),'kind'=>'link','src'=>$src->id(),'dst'=>$dst->id(),'x'=>'400','y'=>'200','style'=>$this->styleLinkDefault]);        
             return $this->getDiagramme(false,$oItem);
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit d'ajouter un diagramme."];
     }
@@ -185,7 +190,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $data['dcterms:created'][]=['@value'=>$d->format('c'),'property_id'=>$this->getProp('dcterms:created')->id(),'type'=>'literal'];    
         $data['oa:styleClass'][]=['@value'=>json_encode($params['style']),'property_id'=>$this->getProp('oa:styleClass')->id(),'type'=>'literal'];
         $data['dcterms:type'][]=['@value'=>$params['kind'],'property_id'=>$this->getProp('dcterms:type')->id(),'type'=>'literal'];
-        $data['jdc:hasArchetype'][] = ['property_id' =>$this->getProp('jdc:hasArchetype')->id(),'value_resource_id' => $params['idArchetype'],'type'=>'resource'];
+        if(isset($params['idArchetype'])) $data['jdc:hasArchetype'][] = ['property_id' =>$this->getProp('jdc:hasArchetype')->id(),'value_resource_id' => $params['idArchetype'],'type'=>'resource'];
         $data['ma:isSourceOf'][] = ['property_id' =>$this->getProp('ma:isSourceOf')->id(),
             'value_resource_id' => $params['dst'] < 0 ? $this->nodes[$params['dst']] : $params['dst'],
             'type'=>'resource'];
