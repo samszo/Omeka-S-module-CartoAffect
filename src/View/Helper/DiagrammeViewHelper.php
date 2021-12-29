@@ -22,11 +22,12 @@ class DiagrammeViewHelper extends AbstractHelper
     protected $styleNodeDstDefault="border-color:green;background-color:#ffffff;color:#000000;border-width:3px;font-weight:none;font-style:none";
     protected $styleLinkDefault='{"from-pos":"center","to-pos":"center","from-pos":"center","to-pos":"center","color":"#000000","lineStyle":""}';
 
-    public function __construct($api,$serverUrlHelper,$acl)
+    public function __construct($api,$serverUrlHelper,$acl, $em)
     {
       $this->api = $api;
       $this->url = $serverUrlHelper(true);
       $this->acl = $acl;
+      $this->em = $em;
     }
 
     /**
@@ -42,13 +43,19 @@ class DiagrammeViewHelper extends AbstractHelper
         switch ($params['query']['action']) {
             case 'getArchetype':
                 $oItem = $this->api->read('items',$params['query']['id'])->getContent();
-                $this->rs[]=$this->getArchetype($oItem);
+                $this->rs[]=$this->getArchetype($oItem, $params['query']['idDiagram']);
                 break;            
             case 'getArchetypes':
                 $this->getArchetypes($params);
                 break;
             case 'changeDiagramme':
                 $this->rs=$this->changeDiagramme($params);
+                break;
+            case 'deleteDiagramme':
+                $this->rs=$this->deleteDiagramme($params['query']['id']);
+                break;
+            case 'renameDiagramme':
+                $this->rs=$this->renameDiagramme($params['query']['id'], $params['query']['label']);
                 break;
             case 'getDiagrammes':
                 $this->getDiagrammes();
@@ -68,6 +75,66 @@ class DiagrammeViewHelper extends AbstractHelper
 
     }
     
+    /**
+     * renomme un diagramme dans omeka
+     *
+     * @param int       $id
+     * @param string    $label
+     * @return array
+     */
+    function renameDiagramme($id, $label){
+        $result = [];
+        $oItem = $this->api->read('items',$id)->getContent();
+        $rs = $oItem->userIsAllowed('update');
+        if($rs){
+            //récupère les données de l'item
+            $data = json_decode(json_encode($oItem), true);
+            $d = new DateTime('NOW');
+            if(isset($data['dcterms:modified']))$data['dcterms:modified'][0]['@value']=$d->format('c');
+            else $data['dcterms:modified'][]=['@value'=>$d->format('c'),'property_id'=>$this->getProp('dcterms:modified')->id(),'type'=>'literal'];    
+            $data['dcterms:title'][0]['@value']=$label;    
+            $this->api->update('items', $id, $data, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
+            $result= 1;           
+        }else{
+            $result=['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de modifier ce diagramme."];    
+        }
+        return $result;
+    }
+    
+    /**
+     * supprime un diagramme dans omeka
+     *
+     * @param int       $id
+     * @param string    $label
+     * @return array
+     */
+    function deleteDiagramme($id){
+        $result = [];
+        $oItem = $this->api->read('items',$id)->getContent();
+        $rs = $oItem->userIsAllowed('delete');
+        if($rs){
+            //récupère les identifiants des géométries et des archétypes liés
+            $ids = ['geo'=>[],'arc'=>[]];
+            $geos = $oItem->value('geom:geometry', ['all' => true]);
+            foreach ($geos as $geo) {
+                $g = $geo->valueResource();
+                if($g->value('jdc:hasArchetype')){
+                    $arc = $g->value('jdc:hasArchetype')->valueResource();
+                    $ids['arc'][$arc->id()]=1;                    
+                }
+                $ids['geo'][]=$g->id();
+            }
+            //supression dans l'ordre item -> linked ressource
+            $ids = array_merge([$id],array_keys($ids['arc']),$ids['geo']);        
+            $response = $this->api->batchDelete('items',$ids, [], ['continueOnError' => true]);
+            $result= 1;           
+        }else{
+            $result=['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de supprimer ce diagramme."];    
+        }
+        return $result;
+    }
+
+
     /**
      * applique les changements du diagramme dans omeka
      *
@@ -275,7 +342,7 @@ class DiagrammeViewHelper extends AbstractHelper
         }
         //vérifie s'il faut changer l'archétype
         if(isset($params['cssStyle'])){
-            $arc = $this->setArchetype($oItem->displayResourceClassLabel(),$params['cssStyle']);
+            $arc = $this->setArchetype($oItem->displayResourceClassLabel(),$params['cssStyle'],$params['idDiagram']);
             if(isset($data['oa:styleClass'])){
                 $data['oa:styleClass'][0]['@value']=$params['cssStyle'];
             }else{
@@ -345,7 +412,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $oItem = $this->api->read('items',$p['query']['id'])->getContent();
         $geos = $oItem->value('geom:geometry', ['all' => true]);
         foreach ($geos as $geo) {
-            $arc=$this->getArchetype($geo->valueResource());                 
+            $arc=$this->getArchetype($geo->valueResource(),$p['query']['id']);                 
             if(!isset($this->doublons[$arc['id']])){
                 $this->rs[] = $arc;
                 $this->doublons[$arc['id']] = true;
@@ -354,12 +421,13 @@ class DiagrammeViewHelper extends AbstractHelper
     }
 
     /**
-     * création d'un archétype en relation avec un item
+     * création d'un archétype en relation avec une géomatrie d'un diagramme
      *
      * @param object     $oItem
+     * @param int        $idDiagram
      * @return array
      */
-    function getArchetype($item){
+    function getArchetype($item, $idDiagram){
 
 
         if($item->value('jdc:hasArchetype'))
@@ -367,7 +435,7 @@ class DiagrammeViewHelper extends AbstractHelper
 
         $rc = $item->displayResourceClassLabel() ;
         $style = $item->value('oa:styleClass')->__toString();
-        $arc = $this->setArchetype($rc,$style);
+        $arc = $this->setArchetype($rc, $style, $idDiagram);
 
         //ajoute la relation à la géométrie
         $oItem=[];
@@ -381,9 +449,9 @@ class DiagrammeViewHelper extends AbstractHelper
         return $this->getArchetypeForEditor($arc);    
     }
 
-    function setArchetype($rc,$style){
-        //recherche si l'archétype existe
-        $ref = md5($rc.$style);
+    function setArchetype($rc,$style,$idDiagram){
+        //recherche si l'archétype existe pour ce diagramme
+        $ref = md5($rc.$style.$idDiagram);
         $param = array();
         $param['property'][0]['property']= $this->getProp('dcterms:isReferencedBy')->id();
         $param['property'][0]['type']='eq';
@@ -467,7 +535,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $rc = $oItem->displayResourceClassLabel() ;
         //récupère l'archétype
         if(!$oItem->value('jdc:hasArchetype'))
-            $arc = $this->getArchetype($oItem);
+            $arc = $this->getArchetype($oItem, $idDiagram);
         else
             $arc = $this->getArchetypeForEditor($oItem->value('jdc:hasArchetype')->valueResource());
         if(!isset($this->doublons[$arc['id']])){

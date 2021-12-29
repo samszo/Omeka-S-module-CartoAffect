@@ -13,6 +13,7 @@ class DiagrammeFactory implements FactoryInterface
         $helpers = $services->get('ViewHelperManager');
         $serverUrlHelper = $helpers->get('ServerUrl');
         $acl = $services->get('Omeka\Acl');
-        return new DiagrammeViewHelper($api, $serverUrlHelper,$acl);
+        $em = $services->get('Omeka\EntityManager');
+        return new DiagrammeViewHelper($api, $serverUrlHelper,$acl,$em);
     }
 }
