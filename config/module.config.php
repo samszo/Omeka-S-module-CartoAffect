@@ -11,6 +11,7 @@ return [
             'EntityRelationViewHelper' => View\Helper\EntityRelationViewHelper::class,
             'QuerySqlViewHelper' => View\Helper\QuerySqlViewHelper::class,
             'DiagrammeViewHelper' => View\Helper\DiagrammeViewHelper::class,
+            'ScenarioViewHelper' => View\Helper\ScenarioViewHelper::class,
         ],
                 
         'factories'  => [
@@ -19,6 +20,7 @@ return [
             'EntityRelationFactory' => Service\ViewHelper\EntityRelationFactory::class,
             'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
             'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
+            'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
         ],
 
     ],

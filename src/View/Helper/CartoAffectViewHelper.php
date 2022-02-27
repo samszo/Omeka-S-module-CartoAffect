@@ -34,6 +34,11 @@ class CartoAffectViewHelper extends AbstractHelper
       //récupère l'actant
       $this->actant = $this->ajouteActant($data['user']);
 
+      if(isset($data['getActant'])){
+        return $this->actant;
+      }
+
+
       //remplace l'identifiant de l'utilisateur par l'actant
       $data['post']['rapports']['ma:hasCreator'][0]['value']=$this->actant->id();
       $data['post']['rapports']['jdc:hasActant'][0]['value']=$this->actant->id();
