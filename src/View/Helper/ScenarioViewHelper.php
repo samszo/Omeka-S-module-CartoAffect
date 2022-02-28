@@ -29,7 +29,7 @@ class ScenarioViewHelper extends AbstractHelper
         $post = $params->fromPost();
         switch ($query['type']) {
             case 'genereScenario':
-                $result = $this->createScenario($this->genScenario($query['item_id']),$query['gen']);
+                $result = $this->createScenario($this->genScenario($query['item_id'],$query['gen']));
                 break;            
             case 'getListeFromItem':
                 $result = $this->getScenarios($query['item_id']);
@@ -130,7 +130,7 @@ class ScenarioViewHelper extends AbstractHelper
      */
     function getScenarios($idItem){
         //mis à jour du scenario global de l'item = toutes les annnotations
-        $this->createScenario($this->genScenario($idItem),'global');
+        $this->createScenario($this->genScenario($idItem,'global'));
         //récupère tous les scénario pour l'item
         $query["resource_template_id"]='11';//Scénario Timeliner
         $query['property'][0]['property']= '196';//has source
@@ -142,21 +142,22 @@ class ScenarioViewHelper extends AbstractHelper
      * Génération d'un scénario à partir de toutes les indexations d'un item
      * 
      * @param int       $idItem
+     * @param string    $type
      *
      * @return json
      */
-    function genScenario($idItem){
+    function genScenario($idItem, $type){
         $item = $this->api->read('items',$idItem)->getContent();
         $query["resource_template_id"]=10;//indexation vidéo
         $query['property'][0]['property']= '196';//has source
         $query['property'][0]['type']='res';
         $query['property'][0]['text']=$idItem; 
         $items = $this->api->search('items',$query)->getContent();
-
+        $titre = $item->value('bibo:shortTitle')->__toString();
         $scenario = [
             "version"=>"1.2.0",
             "modified"=>date(DATE_ATOM),
-            "title"=>"Scenario global de : ".substr($item->displayTitle(),0,10)."...",
+            "title"=>"Scenario ".$type." : ".$titre,
             "layers"=>[],
             "ui"=> [
                 "currentTime"=>0,
@@ -227,7 +228,7 @@ class ScenarioViewHelper extends AbstractHelper
         $scenario['ui']['currentTime']=$debTime;
         $scenario['ui']['totalTime']=$totalTime;
         $scenario['ui']['scrollTime']=$debTime;
-        return ["scenario"=>$scenario,"bodies"=>$bodies,"targets"=>$targets,"sources"=>$sources,"creators"=>$creators,"categories"=>$categories];
+        return ["type"=>$type,"scenario"=>$scenario,"bodies"=>$bodies,"targets"=>$targets,"sources"=>$sources,"creators"=>$creators,"categories"=>$categories];
     }
 
     /**
@@ -283,11 +284,10 @@ class ScenarioViewHelper extends AbstractHelper
      * Création d'un scénario 
      * 
      * @param array     $data
-     * @param string    $type
      *
      * @return json
      */
-    function createScenario($data, $type){
+    function createScenario($data){
         $rt =  $this->api->search('resource_templates', ['label' => 'Scénario Timeliner',])->getContent()[0];
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
@@ -300,7 +300,7 @@ class ScenarioViewHelper extends AbstractHelper
                 break;
             case "dcterms:isReferencedBy":
                 $pIRB = $oP;
-                $IRB = $type."-".implode('_',$data['sources']);
+                $IRB = $data['type']."-".implode('_',$data['sources']);
                 $oItem = $this->setValeur($IRB,$oP,$oItem); 
                 break;
             case "oa:hasSource":
