@@ -1,0 +1,132 @@
+{
+    "o:label": "Sc\u00e9nario Timeliner",
+    "o:resource_template_property": [
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "title",
+            "label": "Title"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasBody",
+            "label": "hasBody"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "isReferencedBy",
+            "label": "Is Referenced By"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "description",
+            "label": "Description"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/schema.org\/",
+            "vocabulary_label": "schema.org",
+            "local_name": "category",
+            "label": "category"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasSource",
+            "label": "hasSource"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasTarget",
+            "label": "hasTarget"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "creator",
+            "label": "Creator"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "created",
+            "label": "Date Created"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "modified",
+            "label": "Date Modified"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/schema.org\/",
+            "vocabulary_label": "schema.org",
+            "local_name": "object",
+            "label": "object"
+        }
+    ],
+    "o:resource_class": {
+        "vocabulary_namespace_uri": "http:\/\/salt.semanticauthoring.org\/ontologies\/sro",
+        "vocabulary_label": "SALT Rhetorical Ontology",
+        "local_name": "Scenario",
+        "label": "Scenario"
+    }
+}

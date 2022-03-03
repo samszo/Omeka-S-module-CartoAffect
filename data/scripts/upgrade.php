@@ -12,18 +12,53 @@ namespace Log;
 $services = $serviceLocator;
 $api = $services->get('Omeka\ApiManager');
 
-if (version_compare($oldVersion, '0.0.7', '<')) {
-    if (!class_exists(\Generic\InstallResources::class)) {
-        if (file_exists(dirname(__DIR__, 3) . '/Generic/InstallResources.php')) {
-            require_once dirname(__DIR__, 3) . '/Generic/InstallResources.php';
-        } elseif (file_exists(__DIR__ . '/InstallResources.php')) {
-            require_once __DIR__ . '/InstallResources.php';
-        } else {
-            // Nothing to install.
-            return $this;
-        }
+if (!class_exists(\Generic\InstallResources::class)) {
+    if (file_exists(dirname(__DIR__, 3) . '/Generic/InstallResources.php')) {
+        require_once dirname(__DIR__, 3) . '/Generic/InstallResources.php';
+    } elseif (file_exists(__DIR__ . '/InstallResources.php')) {
+        require_once __DIR__ . '/InstallResources.php';
+    } else {
+        // Nothing to install.
+        return $this;
     }
-    $installResources = new \Generic\InstallResources($services);
+}
+$installResources = new \Generic\InstallResources($services);
+
+if (version_compare($oldVersion, '0.1.5', '<')) {
+    //ajoute les vocabulaires indispensables
+    $rdfImporter = $services->get('Omeka\RdfImporter');
+    $verifVocabs = ["schemaorg.js","skos.js"];
+    foreach ($verifVocabs as $v) {
+        $data = file_get_contents($this->modulePath()."/data/vocabularies/{$v}");
+        $vocabulary = json_decode($data, true);
+        $vocab = $api->search('vocabularies', ['namespace_uri'=>$vocabulary['vocabulary']['o:namespace_uri']])->getContent();
+        if(!$vocab){
+            $response = $rdfImporter->import(
+                $vocabulary['strategy'],
+                $vocabulary['vocabulary'],
+                [
+                    'file' => $this->modulePath()."/data/vocabularies/{$vocabulary['file']}",
+                    'format' => $vocabulary['format'],
+                ]
+            );
+        }    
+    }
+
+
+}
+
+if (version_compare($oldVersion, '0.1.4', '<')) {
+    //ajoute un ressource template
+    $installResources->createResourceTemplate($this->modulePath()."/data/resource-templates/Indexation_vid_o.json");
+}
+
+if (version_compare($oldVersion, '0.1.3', '<')) {
+    //ajoute un ressource template
+    $installResources->createResourceTemplate($this->modulePath()."/data/resource-templates/Sc_nario_Timeliner.json");
+}
+
+
+if (version_compare($oldVersion, '0.0.7', '<')) {
     //TODO met à jour le vocabulaire dans Generic
     $data = file_get_contents($this->modulePath()."/data/vocabularies/polemika.js");
     $vocabulary = json_decode($data, true);

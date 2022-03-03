@@ -9,6 +9,9 @@ class ScenarioViewHelper extends AbstractHelper
     protected $api;
     protected $acl;
     protected $doublons;
+    protected $props;
+    protected $rcs;
+    protected $rts;
 
     public function __construct($api,$acl)
     {
@@ -44,20 +47,81 @@ class ScenarioViewHelper extends AbstractHelper
                     "time"=>$post["oa:end"],
                     "value"=> 1,
                 ];
-
-                break;                                
+                break;
+            case 'createRelations':                                
+                $result = $this->createRelations($post);
+                break;
             default:
                 $result = [];
                 break;
         }
         return $result;
     }
+
     /**
      * Enregistre une indexation dans la base
      * 
      * @param array $params
      *
-     * @return json
+     * @return o:item
+     */
+    function createRelations($params){
+        //récupère l'item
+        $item =  $this->api->read('items', $params['idItem'])->getContent();
+        //récupère la définition du resource_template
+        $rt =  $item->resourceTemplate();
+
+        $dataItem = json_decode(json_encode($item), true);
+        $update=false;
+        //boucle sur les propriétés à prendre en compte
+        foreach ($params['props'] as $p) {
+            //vérifie les valeurs de la propriété pour l'item
+            $vals = $item->value($p,['all'=>true]);
+            foreach ($vals as $i=>$v) {
+                //si la valeur n'est pas une ressource on la crée
+                if($v->type()=='literal'){
+                    $data = [];
+                    $term = 'relation';
+                    $pVal =  $this->getProp($p);
+                    $comment = $rt->resourceTemplateProperty($pVal->id())->alternateComment();
+                    if(substr($comment,0,6)=='class='){
+                        $term = substr($comment,6); 
+                        $rc =  $this->getRc($term);
+                        $data['o:resource_class'] = ['o:id' => $rc->id()];
+                    }
+                    //vérifie l'existence de l'item
+                    $pRef =  $this->getProp('dcterms:isReferencedBy');
+                    $query['property'][0]['property']= $pRef->id();
+                    $query['property'][0]['type']='eq';
+                    $query['property'][0]['text']=md5($term.$v->__toString()); 
+                    $result = $this->api->search('items',$query)->getContent();
+                    if(!count($result)){
+                        $pTitle = $this->getProp('dcterms:title');
+                        $data['dcterms:title'][]=[
+                            '@value' => $v->__toString(),'type' => 'literal', 'property_id'=>$pTitle->id()
+                        ];
+                        $itemRef = $this->api->create('items',$data)->getContent();                                      
+                    }else $itemRef = $result[0];
+                    //on modifie la valeur de l'item
+                   $dataItem[$p][$i]=[
+                       'value_resource_id'=>$itemRef->id(),'property_id'=>$pVal->id(),'type'=>'resource'              
+                   ];
+                   $update=true;
+                }
+            }
+        }
+        if($update){
+            $this->api->update('items', $item->id(), $dataItem, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
+        }
+        return $item;
+    }
+
+    /**
+     * Enregistre une indexation dans la base
+     * 
+     * @param array $params
+     *
+     * @return o:item
      */
     function saveIndex($params){
         //enregistre une indexation dans la base
@@ -132,8 +196,10 @@ class ScenarioViewHelper extends AbstractHelper
         //mis à jour du scenario global de l'item = toutes les annnotations
         $this->createScenario($this->genScenario($idItem,'global'));
         //récupère tous les scénario pour l'item
-        $query["resource_template_id"]='11';//Scénario Timeliner
-        $query['property'][0]['property']= '196';//has source
+        $rt =  $this->api->search('resource_templates', ['label' => 'Scénario Timeliner',])->getContent()[0];
+        $query["resource_template_id"]=$rt->id();
+        $p =  $this->api->search('properties', ['term'=>'oa:hasSource'])->getContent()[0];
+        $query['property'][0]['property']= $p->id();
         $query['property'][0]['type']='res';
         $query['property'][0]['text']=$idItem; 
         return $this->api->search('items',$query)->getContent();
@@ -147,9 +213,12 @@ class ScenarioViewHelper extends AbstractHelper
      * @return json
      */
     function genScenario($idItem, $type){
+        $rt =  $this->api->search('resource_templates', ['label' => 'Indexation vidéo',])->getContent()[0];
+
         $item = $this->api->read('items',$idItem)->getContent();
-        $query["resource_template_id"]=10;//indexation vidéo
-        $query['property'][0]['property']= '196';//has source
+        $query["resource_template_id"]=$rt->id();//indexation vidéo
+        $p =  $this->api->search('properties', ['term'=>'oa:hasSource'])->getContent()[0];
+        $query['property'][0]['property']= $p->id();
         $query['property'][0]['type']='res';
         $query['property'][0]['text']=$idItem; 
         $items = $this->api->search('items',$query)->getContent();
@@ -407,9 +476,27 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
+    //fonctions utilitaires géénriques
     function aleaColor($alpha="0.5"){
         //return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
         return 'rgba('.random_int(0,255).','.random_int(0,255).','.random_int(0,255).','.$alpha.')';
+    }
+
+    function getProp($p){
+        if(!isset($this->props[$p]))
+          $this->props[$p]=$this->api->search('properties', ['term' => $p])->getContent()[0];
+        return $this->props[$p];
+      }
+  
+    function getRc($t){
+        if(!isset($this->rcs[$t]))
+            $this->rcs[$t] = $this->api->search('resource_classes', ['term' => $t])->getContent()[0];
+        return $this->rcs[$t];
+    }
+    function getRt($l){
+        if(!isset($this->rts[$l]))
+            $this->rts[$l] = $this->api->read('resource_templates', ['label' => $l])->getContent();
+        return $this->rts[$l];
     }
 
   
