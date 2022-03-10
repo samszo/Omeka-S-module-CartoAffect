@@ -44,7 +44,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $result = $this->getIndex($query['item_id']);
                 break;
             case 'saveIndex':
-                $i = $this->saveIndex($post,$post['rt'] ? $post['rt'] : 'Indexation vidéo');
+                $i = $this->saveIndex($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
                 $result[] = $this->createTimelinerEntry($post['oa:hasSource'], $post['idGroup'], $post['category'], $i);
                 $result[] = [
                     "time"=>$post["oa:end"],
