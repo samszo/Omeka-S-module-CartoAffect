@@ -51,6 +51,9 @@ class ScenarioViewHelper extends AbstractHelper
                     "value"=> 1,
                 ];
                 break;
+            case 'addCategory':                
+                $result = $this->addCategory($post);
+                break;
             case 'createRelations':                                
                 $result = $this->createRelations($post);
                 break;
@@ -61,6 +64,52 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
+    /**
+     * ajout d'une catégorie pour les layer
+     * 
+     * @param array $params
+     *
+     * @return o:item
+     */
+    function addCategory($params){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            //enregistre une indexation dans la base
+            $rt =  $this->getRt($params['rt']);
+            $oItem = [];
+            $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
+            $oItem['o:resource_template'] = ['o:id' => $rt->id()];
+            $rtp = $rt->resourceTemplateProperties();
+            foreach ($rtp as $p) {
+                $oP = $p->property();
+                switch ($oP->term()) {
+                case "dcterms:created":
+                case "dcterms:modified":
+                    $oItem = $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
+                    break;                                                            
+                default:
+                    if(isset($params[$oP->term()])){
+                        $oItem = $this->setValeur($params[$oP->term()],$oP,$oItem); 
+                    }
+                    break;
+                }
+            }
+            //vérifie la mise à jour
+            if(isset($params['id'])){
+                //$oItem
+                $result = $this->api->read('items', $params['id'])->getContent();
+                //conserve la date de création
+                $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
+                $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
+                $result = $this->api->read('items',$result->id())->getContent();
+            }else{
+                $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+            }              
+            return $result;               
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer une catégorie."];
+
+    }
+        
 
     /**
      * Suppression d'un scenario et de toutes les tracks
