@@ -612,7 +612,7 @@ class ScenarioViewHelper extends AbstractHelper
         foreach($data as $item) {
             //construction de la clef
             $cate = $item->value('schema:category')->valueResource();
-            $crea = $item->value('dcterms:creator');
+            $crea = $item->value('dcterms:creator')->valueResource();
 
             $color = "";
             $desc = "";
