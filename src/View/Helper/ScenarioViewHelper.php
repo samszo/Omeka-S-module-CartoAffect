@@ -31,8 +31,11 @@ class ScenarioViewHelper extends AbstractHelper
         $query = $params->fromQuery();
         $post = $params->fromPost();
         switch ($query['type']) {
+            case 'deleteScenario':
+                $result = $this->deleteScenario($query['item_id']);
+                break;            
             case 'genereScenario':
-                $result = $this->createScenario($this->genScenario($query['item_id'],$query['gen']));
+                $result = $this->createScenario($this->genScenario($query,$post));
                 break;            
             case 'getListeFromItem':
                 $result = $this->getScenarios($query['item_id']);
@@ -41,7 +44,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $result = $this->getIndex($query['item_id']);
                 break;
             case 'saveIndex':
-                $i = $this->saveIndex($post);
+                $i = $this->saveIndex($post,$post['rt'] ? $post['rt'] : 'Indexation vidéo');
                 $result[] = $this->createTimelinerEntry($post['oa:hasSource'], $post['idGroup'], $post['category'], $i);
                 $result[] = [
                     "time"=>$post["oa:end"],
@@ -58,8 +61,36 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
+
     /**
-     * Enregistre une indexation dans la base
+     * Suppression d'un scenario et de toutes les tracks
+     * 
+     * @param int $id
+     *
+     * @return string
+     */
+    function deleteScenario($id){
+        $result = [];
+        $oItem = $this->api->read('items',$id)->getContent();
+        $rs = $oItem->userIsAllowed('delete');
+        if($rs){
+            //récupère les identifiants des tracks
+            $ids = [];
+            $ids[]=$id;
+            $tracks = $oItem->value('oa:hasBody', ['all' => true]);
+            foreach ($tracks as $t) {
+                $ids[]=$t->valueResource()->id();
+            }
+            $response = $this->api->batchDelete('items',$ids, [], ['continueOnError' => true]);
+            $result= ['message'=>"Scenario supprimé."];           
+        }else{
+            $result=['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de supprimer ce scenario."];    
+        }
+        return $result;
+    }
+        
+    /**
+     * Création des relations à partir d'une valeur textuelle transformé en item
      * 
      * @param array $params
      *
@@ -119,23 +150,32 @@ class ScenarioViewHelper extends AbstractHelper
     /**
      * Enregistre une indexation dans la base
      * 
-     * @param array $params
+     * @param   array   $params
+     * @param   string  $rtLabel
      *
      * @return o:item
      */
-    function saveIndex($params){
+    function saveIndex($params, $rtLabel){
         //enregistre une indexation dans la base
-        $rt =  $this->api->search('resource_templates', ['label' => 'Indexation vidéo',])->getContent()[0];
+        $rt =  $this->getRt($rtLabel);
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
         $oItem['o:resource_template'] = ['o:id' => $rt->id()];
-        foreach ($rt->resourceTemplateProperties() as $p) {
+        $rtp = $rt->resourceTemplateProperties();
+        foreach ($rtp as $p) {
           $oP = $p->property();
           switch ($oP->term()) {
             case "oa:hasSource":
             case "oa:hasTarget":
             case "schema:category":
             case "dcterms:creator":
+            case "genstory:hasActant":
+            case "genstory:hasAffect":
+            case "genstory:hasEvenement":
+            case "genstory:hasHistoire":
+            case "genstory:hasLieu":
+            case "genstory:hasMonde":
+            case "genstory:hasObjet":
                 if(isset($params[$oP->term()])){
                     $oItem = $this->setValeur([['id'=>$params[$oP->term()]]],$oP,$oItem); 
                 }
@@ -194,7 +234,7 @@ class ScenarioViewHelper extends AbstractHelper
      */
     function getScenarios($idItem){
         //mis à jour du scenario global de l'item = toutes les annnotations
-        $this->createScenario($this->genScenario($idItem,'global'));
+        $this->createScenario($this->genScenario(['idItem'=>$idItem,'type'=>'global']));
         //récupère tous les scénario pour l'item
         $rt =  $this->api->search('resource_templates', ['label' => 'Scénario Timeliner',])->getContent()[0];
         $query["resource_template_id"]=$rt->id();
@@ -207,26 +247,72 @@ class ScenarioViewHelper extends AbstractHelper
     /**
      * Génération d'un scénario à partir de toutes les indexations d'un item
      * 
-     * @param int       $idItem
-     * @param string    $type
+     * @param array     $query
+     * @param array     $post
      *
-     * @return json
+     * @return array
      */
-    function genScenario($idItem, $type){
-        $rt =  $this->api->search('resource_templates', ['label' => 'Indexation vidéo',])->getContent()[0];
-
-        $item = $this->api->read('items',$idItem)->getContent();
-        $query["resource_template_id"]=$rt->id();//indexation vidéo
-        $p =  $this->api->search('properties', ['term'=>'oa:hasSource'])->getContent()[0];
-        $query['property'][0]['property']= $p->id();
-        $query['property'][0]['type']='res';
-        $query['property'][0]['text']=$idItem; 
-        $items = $this->api->search('items',$query)->getContent();
-        $titre = $item->value('bibo:shortTitle')->__toString();
+    function genScenario($query, $post=false){
+        $gen = $query['gen'];
+        $rt = 'Scenario';
+        switch ($gen) {
+            case 'global':
+                $idItem = $query['item_id'];
+                $rt =  $this->api->search('resource_templates', ['label' => 'Indexation vidéo',])->getContent()[0];
+                $item = $this->api->read('items',$idItem)->getContent();
+                $query["resource_template_id"]=$rt->id();//indexation vidéo
+                $p =  $this->api->search('properties', ['term'=>'oa:hasSource'])->getContent()[0];
+                $query['property'][0]['property']= $p->id();
+                $query['property'][0]['type']='res';
+                $query['property'][0]['text']=$idItem; 
+                $items = $this->api->search('items',$query)->getContent();
+                $titre = $item->value('bibo:shortTitle')->__toString();
+                //groupe les items par category et creator pour visualiser les point de vue
+                $gItems = $this->groupByCategoryCreator($items);
+                $rt = 'Scénario Timeliner';
+                break;            
+            case 'fromStories':
+                //récupère les propriétés nécessaires des histoires
+                $items = [];
+                $titre = " - ";
+                foreach ($post['genstory:hasHistoire'] as $hId) {
+                    $item = $this->api->read('items',$hId)->getContent();
+                    $titre .= $item->displayTitle().' - ';
+                    foreach ($post['props'] as $p) {
+                        $vals = $item->value($p,['all'=>true]);
+                        $op = $this->getProp($p);
+                        foreach ($vals as $i=>$v) {
+                            //si la valeur est une ressource on crée l'index
+                            if($v->type()=='resource'){
+                                $itemVal = $v->valueResource();
+                                $params = [
+                                    'dcterms:title'=> $op->label().' - '.$itemVal->value('dcterms:title')->__toString().' : 1',
+                                    'dcterms:description'=> $itemVal->value('dcterms:description') ? $itemVal->value('dcterms:description')->__toString() : '',
+                                    'oa:start'=>0,
+                                    'oa:end'=>10,                                    
+                                    'oa:hasSource'=>$item->id(),
+                                    'oa:hasTarget'=>$itemVal->id(),
+                                    'dcterms:creator'=>$post['dcterms:creator'],
+                                ];
+                                $params[$p]=$itemVal->id();                            
+                                $items[] = $this->saveIndex($params,'Scenario track');
+                            }
+                        }            
+                    }
+                }
+                //groupe les items par titre
+                $gItems = $this->groupBySourceClassTarget($items);
+                $titre = $post['dcterms:title'] ? $post['dcterms:title'] : $titre;
+                break;            
+            default:
+                $gItems = []; 
+                break;
+        }
+        
         $scenario = [
             "version"=>"1.2.0",
             "modified"=>date(DATE_ATOM),
-            "title"=>"Scenario ".$type." : ".$titre,
+            "title"=>"Scenario ".$gen." : ".$titre,
             "layers"=>[],
             "ui"=> [
                 "currentTime"=>0,
@@ -235,8 +321,6 @@ class ScenarioViewHelper extends AbstractHelper
                 "timeScale"=>0.05
                 ]    
             ];
-        //par defaut groupe les items par category et creator pour visualiser les point de vue
-        $gItems = $this->groupByCategoryCreator($items);
         $bodies=[];$targets = [];$sources=[];$creators=[];$categories=[];$doublons=['sources'=>[],'creators'=>[],'targets'=>[]];
         $totalTime = 0;$debTime=100000000000000000;
         $idLayer=0;
@@ -297,7 +381,7 @@ class ScenarioViewHelper extends AbstractHelper
         $scenario['ui']['currentTime']=$debTime;
         $scenario['ui']['totalTime']=$totalTime;
         $scenario['ui']['scrollTime']=$debTime;
-        return ["type"=>$type,"scenario"=>$scenario,"bodies"=>$bodies,"targets"=>$targets,"sources"=>$sources,"creators"=>$creators,"categories"=>$categories];
+        return ["rt"=>$rt,"type"=>$gen,"scenario"=>$scenario,"bodies"=>$bodies,"targets"=>$targets,"sources"=>$sources,"creators"=>$creators,"categories"=>$categories];
     }
 
     /**
@@ -307,45 +391,61 @@ class ScenarioViewHelper extends AbstractHelper
      * @param int       $idGroup
      * @param string    $category
      * @param o:Item    $i
-     *
+     * 
      * @return json
      */
     function createTimelinerEntry($idSource, $idGroup, $category, $i){
-        $s = explode(':',$i->value('oa:start')->__toString());
-        $ts = count($s) > 1 ? $s[0]*3600+$s[1]*60+$s[2] : trim($s[0])+0;//pour que la chaine soit un nombre
-        $e = explode(':',$i->value('oa:end')->__toString());
-        $te = count($e) > 1 ? $e[0]*3600+$e[1]*60+$e[2] : trim($e[0])+0;//pour que la chaine soit un nombre 
+        if($i->value('oa:start')){
+            $s = explode(':',$i->value('oa:start')->__toString());
+            $ts = count($s) > 1 ? $s[0]*3600+$s[1]*60+$s[2] : trim($s[0])+0;//pour que la chaine soit un nombre   
+        }else $ts = 0;
+        if($i->value('oa:end')){
+            $e = explode(':',$i->value('oa:end')->__toString());
+            $te = count($e) > 1 ? $e[0]*3600+$e[1]*60+$e[2] : trim($e[0])+0;//pour que la chaine soit un nombre 
+        }else $te=5;
         if($te==$ts)$te+=5;//ajoute des secondes pour voir la track
 
         if(!$idGroup){
             $category = $i->value('schema:category')->valueResource()->displayTitle().' : '.$i->value('dcterms:creator')->valueResource()->displayTitle();
             $idGroup = $i->value('schema:category')->valueResource()->id().'_'.$i->value('dcterms:creator')->valueResource()->id();
         }
+        $resourceClass = $i->resourceClass();
+        $prop = $resourceClass->label();
 
         $target = $i->value('oa:hasTarget')->valueResource();
         $l = [
             "time"=>$ts,
             "timeEnd"=>$te,
             "value"=> 0,
-            "start"=> $i->value('oa:start')->__toString(),
-            "end"=> $i->value('oa:end')->__toString(),
+            "start"=> $i->value('oa:start') ? $i->value('oa:start')->__toString() : $ts,
+            "end"=> $i->value('oa:end') ? $i->value('oa:end')->__toString() : $te,
             "_color"=> $i->value('schema:color') ? $i->value('schema:color')->__toString() : $this->aleaColor(),
             "idIndex"=> $i->id(),
             "idObj"=> $i->id(),
             "idTarget"=> $target->id(),
-            "typeTarget"=> $target->mediaType(),                    
-            "urlTarget"=> $target->originalUrl(),                    
             "nameTarget"=> $target->displayTitle().' - '.$target->id(),                    
             "idSource"=> $idSource,
-            "idCat"=>$i->value('schema:category')->valueResource()->id(),
             "idGroup"=>$idGroup,
             "category"=>$category,
             "idCreator"=>$i->value('dcterms:creator')->valueResource()->id(),
             "creator"=>$i->value('dcterms:creator')->valueResource()->displayTitle(),
-            "prop"=> "omk_videoIndex",
+            "prop"=> $prop,
             "text"=> $i->displayTitle(),
             "tween"=> "linear"
-        ];       
+        ];
+        //ajoute la catégorie
+        if($i->value('schema:category')){
+            $l["idCat"]=$i->value('schema:category')->valueResource()->id();
+        }
+        //ajoute les infos du media
+        if($target->resourceName()=='media'){
+            $l["typeTarget"]= $target->mediaType();
+            $l["urlTarget"]= $target->originalUrl();
+        }else{                        
+            $l["typeTarget"]= $target->resourceName();
+            $l["urlTarget"]= $target->url();
+            $l["mediaTarget"]= $target->media();
+        }  
         return $l;
     }
 
@@ -357,7 +457,7 @@ class ScenarioViewHelper extends AbstractHelper
      * @return json
      */
     function createScenario($data){
-        $rt =  $this->api->search('resource_templates', ['label' => 'Scénario Timeliner',])->getContent()[0];
+        $rt =  $this->api->search('resource_templates', ['label' => $data['rt'],])->getContent()[0];
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
         $oItem['o:resource_template'] = ['o:id' => $rt->id()];
@@ -456,12 +556,63 @@ class ScenarioViewHelper extends AbstractHelper
      * 
      * @param {Array} $data Array that stores multiple item.
      */
+    function groupByTitre($data) {
+        $result = array();
+        foreach($data as $item) {
+            //construction de la clef
+            $titre = $item->value('dcterms:title');
+
+            $color = "";
+            $desc = "";
+            $val = $titre;
+            $id = $item->id();
+            $color = $this->aleaColor();
+            $desc = $item->value('dcterms:description');
+            if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'color'=> $color,'desc'=> $desc];
+            $result[$val]['items'][] = $item;                    
+        }
+        ksort($result);
+        return $result;
+    }    
+
+    /**
+     * Function that groups an array of associative arrays by some key.
+     * 
+     * @param {Array} $data Array that stores multiple item.
+     */
+    function groupByClassTitre($data) {
+        $result = array();
+        foreach($data as $item) {
+            //construction de la clef
+            $class = 'resource';
+            $resourceClass = $item->resourceClass();
+            if ($resourceClass) $class = $resourceClass->label();
+            $titre = $item->value('dcterms:title');
+
+            $color = "";
+            $desc = "";
+            $val = $class.' : '.$titre;
+            $id = $class.'_'.$item->id();
+            $color = $this->aleaColor();
+            $desc = $item->value('dcterms:description');
+            if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'color'=> $color,'desc'=> $desc];
+            $result[$val]['items'][] = $item;                    
+        }
+        ksort($result);
+        return $result;
+    }    
+
+    /**
+     * Function that groups an array of associative arrays by some key.
+     * 
+     * @param {Array} $data Array that stores multiple item.
+     */
     function groupByCategoryCreator($data) {
         $result = array();
         foreach($data as $item) {
             //construction de la clef
             $cate = $item->value('schema:category')->valueResource();
-            $crea = $item->value('dcterms:creator')->valueResource();
+            $crea = $item->value('dcterms:creator');
 
             $color = "";
             $desc = "";
@@ -475,6 +626,32 @@ class ScenarioViewHelper extends AbstractHelper
         ksort($result);
         return $result;
     }
+
+    /**
+     * Function that groups an array of associative arrays by some key.
+     * 
+     * @param {Array} $data Array that stores multiple item.
+     */
+    function groupBySourceClassTarget($data) {
+        $result = array();
+        foreach($data as $item) {
+            //construction de la clef
+            $source = $item->value('oa:hasSource')->valueResource();
+            $target = $item->value('oa:hasTarget')->valueResource();
+            $rc = $target->resourceClass();
+
+            $color = "";
+            $desc = "";
+            $val = $source->id().' : '.$rc->label().' : '.$target->displayTitle();
+            $id = $source->id().' : '.$rc->id().' : '.$target->id();
+            $color = $this->aleaColor();
+            $desc = '';
+            if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'color'=> $color,'desc'=> $desc];
+            $result[$val]['items'][] = $item;                    
+        }
+        ksort($result);
+        return $result;
+    }    
 
     //fonctions utilitaires géénriques
     function aleaColor($alpha="0.5"){
