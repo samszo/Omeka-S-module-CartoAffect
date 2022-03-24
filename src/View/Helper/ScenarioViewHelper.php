@@ -12,6 +12,8 @@ class ScenarioViewHelper extends AbstractHelper
     protected $props;
     protected $rcs;
     protected $rts;
+    protected $propsValueRessource=['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
+        ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'];
 
     public function __construct($api,$acl)
     {
@@ -43,9 +45,15 @@ class ScenarioViewHelper extends AbstractHelper
             case 'getIndexFromScenario':
                 $result = $this->getIndex($query['item_id']);
                 break;
+            case 'createTrack':
+                $result = $this->createTrack($post);
+                break;
+            case 'deleteTrack':
+                $result = $this->deleteTrack($post);
+                break;
             case 'saveIndex':
                 $i = $this->saveIndex($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
-                $result[] = $this->createTimelinerEntry($post['oa:hasSource'], $post['idGroup'], $post['category'], $i);
+                $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
                 $result[] = [
                     "time"=>$post["oa:end"],
                     "value"=> 1,
@@ -64,6 +72,43 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
+    /**
+     * supression d'un track
+     * 
+     * @param   array   $post
+     *
+     * @return o:item
+     */
+    function deleteTrack($post){
+        $rs = $this->acl->userIsAllowed(null,'delete');
+        if($rs){
+            $this->api->delete('items', $post['id']);
+            return ['message'=>"Track supprimé."];               
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de supprimer."];
+
+    }    /**
+     * creation d'un track
+     * 
+     * @param   array   $post
+     *
+     * @return o:item
+     */
+    function createTrack($post){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            $i = $this->saveIndex($post,$post['rt']);
+            $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
+            $result[] = [
+                "time"=>$post["oa:end"],
+                "value"=> 1,
+            ];
+            //ajoute la track au scenario
+            $data = $this->setValeur([['id'=>$i->id()]],$this->getProp('oa:hasBody'),[]); 
+            $this->api->update('items', $post['idScenario'], $data, [], ['isPartial'=>1,'collectionAction' => 'append']);
+            return $result;               
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer."];
+
+    }
     /**
      * ajout d'une catégorie pour les layer
      * 
@@ -215,7 +260,9 @@ class ScenarioViewHelper extends AbstractHelper
           $oP = $p->property();
           switch ($oP->term()) {
             case "oa:hasSource":
+            case "oa:hasBody":
             case "oa:hasTarget":
+            case "oa:hasScope":
             case "schema:category":
             case "dcterms:creator":
             case "genstory:hasActant":
@@ -225,8 +272,10 @@ class ScenarioViewHelper extends AbstractHelper
             case "genstory:hasLieu":
             case "genstory:hasMonde":
             case "genstory:hasObjet":
-                if(isset($params[$oP->term()])){
-                    $oItem = $this->setValeur([['id'=>$params[$oP->term()]]],$oP,$oItem); 
+                if(isset($params[$oP->term()]) && $params[$oP->term()]){
+                    $val = $params[$oP->term()];
+                    if(!is_array($val)) $val= [['id'=>$val]];
+                    $oItem = $this->setValeur($val,$oP,$oItem); 
                 }
                 break;                    
             case "dcterms:created":
@@ -241,9 +290,9 @@ class ScenarioViewHelper extends AbstractHelper
             }
         }
         //vérifie la mise à jour
-        if(isset($params['idIndex'])){
+        if(isset($params['idObj'])){
             //$oItem
-            $result = $this->api->read('items', $params['idIndex'])->getContent();
+            $result = $this->api->read('items', $params['idObj'])->getContent();
             //conserve la date de création
             $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
             $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
@@ -304,6 +353,8 @@ class ScenarioViewHelper extends AbstractHelper
     function genScenario($query, $post=false){
         $gen = $query['gen'];
         $rt = 'Scenario';
+        $IRB = "";
+        $dateCreation=date(DATE_ATOM);
         switch ($gen) {
             case 'global':
                 $idItem = $query['item_id'];
@@ -318,6 +369,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $titre = $item->value('bibo:shortTitle')->__toString();
                 //groupe les items par category et creator pour visualiser les point de vue
                 $gItems = $this->groupByCategoryCreator($items);
+                $inScheme = "groupByCategoryCreator";
                 $rt = 'Scénario Timeliner';
                 break;            
             case 'fromStories':
@@ -331,18 +383,20 @@ class ScenarioViewHelper extends AbstractHelper
                         $vals = $item->value($p,['all'=>true]);
                         $op = $this->getProp($p);
                         foreach ($vals as $i=>$v) {
-                            //si la valeur est une ressource on crée l'index
+                            //si la valeur est une ressource on récupère l'index
                             if($v->type()=='resource'){
                                 $itemVal = $v->valueResource();
+                                $target = $itemVal->primaryMedia();
                                 $params = [
                                     'dcterms:title'=> $op->label().' - '.$itemVal->value('dcterms:title')->__toString().' : 1',
                                     'dcterms:description'=> $itemVal->value('dcterms:description') ? $itemVal->value('dcterms:description')->__toString() : '',
                                     'oa:start'=>0,
-                                    'oa:end'=>10,                                    
-                                    'oa:hasSource'=>$item->id(),
-                                    'oa:hasTarget'=>$itemVal->id(),
+                                    'oa:end'=>10,
+                                    'oa:hasScope'=>$item->id(),                                    
+                                    'oa:hasSource'=>$itemVal->id(),
                                     'dcterms:creator'=>$post['dcterms:creator'],
                                 ];
+                                if($target)$params['oa:hasTarget']= $target->id();
                                 $params[$p]=$itemVal->id();                            
                                 $items[] = $this->saveIndex($params,'Scenario track');
                             }
@@ -350,27 +404,62 @@ class ScenarioViewHelper extends AbstractHelper
                     }
                 }
                 //groupe les items par titre
-                $gItems = $this->groupBySourceClassTarget($items);
+                $gItems = $this->groupByScopeSourceClass($items);
+                $IRB = $gen.'-'.$item->id();
+                $inScheme = "groupByScopeSourceClass";
                 $titre = $post['dcterms:title'] ? $post['dcterms:title'] : $titre;
                 break;            
+            case 'fromUti':
+                //récupère les tracks du scenario pour mettre à jour les infos des sources
+                $items = [];
+                $item = $this->api->read('items',$post['idScenario'])->getContent();
+                $titre = $item->displayTitle();
+                $tracks = $item->value('oa:hasBody',['all'=>true]);
+                $inScheme = $item->value('skos:inScheme') ? $item->value('skos:inScheme')->__toString() : '';
+                $IRB = $item->value('dcterms:isReferencedBy')->__toString();
+                $dateCreation=$item->value('dcterms:created')->__toString();
+                if(substr($IRB,0,7)!='fromUti')$IRB='fromUti-'.$post['idActant'].':'.$IRB;
+                foreach ($tracks as $t) {
+                    $items[] = $t->valueResource();
+                }
+                switch ($inScheme) {
+                    case "groupByScopeSourceClass":
+                        $gItems = $this->groupByScopeSourceClass($items);
+                        break;
+                    case "groupBySourceClassTarget":
+                        $gItems = $this->groupBySourceClassTarget($items);
+                        break;
+                    case "groupBySourceClassBody":
+                        $gItems = $this->groupBySourceClassBody($items);
+                        break;                            
+                    default:
+                        $gItems = $this->groupByCategoryCreator($items);
+                        break;
+                }
+                break;
             default:
                 $gItems = []; 
+                $inScheme = "no";
                 break;
         }
         
         $scenario = [
             "version"=>"1.2.0",
             "modified"=>date(DATE_ATOM),
-            "title"=>"Scenario ".$gen." : ".$titre,
+            "title"=>$titre,
+            "groupBy"=>$inScheme,
+            "isReferencedBy"=>$IRB,
+            "dateCreation"=>$dateCreation,
+            "idScenario"=>isset($post['idScenario']) ? $post['idScenario'] : 0,
             "layers"=>[],
             "ui"=> [
                 "currentTime"=>0,
                 "totalTime"=>0,
                 "scrollTime"=>0,
-                "timeScale"=>0.05
+                "timeScale"=>60
                 ]    
             ];
-        $bodies=[];$targets = [];$sources=[];$creators=[];$categories=[];$doublons=['sources'=>[],'creators'=>[],'targets'=>[]];
+        $bodies=[];$facettes = [];$categories=[];$doublons=[];
         $totalTime = 0;$debTime=100000000000000000;
         $idLayer=0;
         foreach ($gItems as $k => $groupe) {
@@ -378,6 +467,8 @@ class ScenarioViewHelper extends AbstractHelper
             $layer = [
                 "id"=>$groupe['id'],
                 "idLayer"=>$idLayer,
+                "class"=>$groupe['class'] ? $groupe['class'] : 'item',
+                "source"=>$groupe['source'] ? $groupe['source'] : 'item',
                 "name"=>$k,
                 "_color"=> $groupe['color'],
                 "_value"=> 0,
@@ -386,17 +477,23 @@ class ScenarioViewHelper extends AbstractHelper
             ];
             //ajoute les entrées enregistrées
             foreach ($groupe['items'] as $i) {
-                $e = $this->createTimelinerEntry($item->id(), $groupe['id'], $k, $i);
+                $e = $this->createTimelinerEntry($groupe['id'], $k, $i);
+                $bodies[]=$e;
                 if($debTime>$e["time"])$debTime=$e["time"];            
                 $layer['values'][]=$e;
                 //création des facettes
-                if(!isset($doublons['sources'][$e["idSource"]]))$sources[]=$e["idSource"];
-                if(!isset($doublons['creators'][$e["idCreator"]]))$creators[]=$e["idCreator"];
-                if(!isset($doublons['targets'][$e["idTarget"]]))$targets[]=$e["idTarget"];
-                $doublons['sources'][$e["idSource"]]=1;
-                $doublons['creators'][$e["idCreator"]]=1;
-                $doublons['targets'][$e["idTarget"]]=1;
-                $bodies[]=$e;
+                foreach ($this->propsValueRessource as $p) {
+                    if(!isset($doublons[$p])){
+                        $doublons[$p]=[];
+                        $facettes[$p]=[];
+                    }
+                    foreach ($e[$p] as $v) {
+                        if(!isset($doublons[$p][$v->id()])){
+                            $facettes[$p][]=$v->id();
+                            $doublons[$p][$v->id()]=1;
+                        }
+                    }
+                } 
             }
             $scenario['layers'][]=$layer;
             $idLayer++;
@@ -430,7 +527,7 @@ class ScenarioViewHelper extends AbstractHelper
         $scenario['ui']['currentTime']=$debTime;
         $scenario['ui']['totalTime']=$totalTime;
         $scenario['ui']['scrollTime']=$debTime;
-        return ["rt"=>$rt,"type"=>$gen,"scenario"=>$scenario,"bodies"=>$bodies,"targets"=>$targets,"sources"=>$sources,"creators"=>$creators,"categories"=>$categories];
+        return ["rt"=>$rt,"type"=>$gen,"scenario"=>$scenario,"bodies"=>$bodies,"facettes"=>$facettes,"categories"=>$categories];
     }
 
     /**
@@ -443,7 +540,7 @@ class ScenarioViewHelper extends AbstractHelper
      * 
      * @return json
      */
-    function createTimelinerEntry($idSource, $idGroup, $category, $i){
+    function createTimelinerEntry($idGroup, $category, $i){
         if($i->value('oa:start')){
             $s = explode(':',$i->value('oa:start')->__toString());
             $ts = count($s) > 1 ? $s[0]*3600+$s[1]*60+$s[2] : trim($s[0])+0;//pour que la chaine soit un nombre   
@@ -461,7 +558,6 @@ class ScenarioViewHelper extends AbstractHelper
         $resourceClass = $i->resourceClass();
         $prop = $resourceClass->label();
 
-        $target = $i->value('oa:hasTarget')->valueResource();
         $l = [
             "time"=>$ts,
             "timeEnd"=>$te,
@@ -469,34 +565,57 @@ class ScenarioViewHelper extends AbstractHelper
             "start"=> $i->value('oa:start') ? $i->value('oa:start')->__toString() : $ts,
             "end"=> $i->value('oa:end') ? $i->value('oa:end')->__toString() : $te,
             "_color"=> $i->value('schema:color') ? $i->value('schema:color')->__toString() : $this->aleaColor(),
-            "idIndex"=> $i->id(),
             "idObj"=> $i->id(),
-            "idTarget"=> $target->id(),
-            "nameTarget"=> $target->displayTitle().' - '.$target->id(),                    
-            "idSource"=> $idSource,
             "idGroup"=>$idGroup,
             "category"=>$category,
-            "idCreator"=>$i->value('dcterms:creator')->valueResource()->id(),
-            "creator"=>$i->value('dcterms:creator')->valueResource()->displayTitle(),
             "prop"=> $prop,
             "text"=> $i->displayTitle(),
-            "tween"=> "linear"
+            "tween"=> "linear",
         ];
         //ajoute la catégorie
         if($i->value('schema:category')){
             $l["idCat"]=$i->value('schema:category')->valueResource()->id();
         }
-        //ajoute les infos du media
-        if($target->resourceName()=='media'){
-            $l["typeTarget"]= $target->mediaType();
-            $l["urlTarget"]= $target->originalUrl();
-        }else{                        
-            $l["typeTarget"]= $target->resourceName();
-            $l["urlTarget"]= $target->url();
-            $l["mediaTarget"]= $target->media();
-        }  
+        //ajoute les infos des ressources
+        foreach ($this->propsValueRessource as $p) {
+            $this->addRessourceInfos($p,$i,$l);
+        }
         return $l;
     }
+
+    /**
+     * ajoute les infos de la ressource valueResource  
+     * 
+     * @param string    $p
+     * @param o:item    $i
+     * @param array     $l
+     *
+     * @return array
+     */
+    function addRessourceInfos($p, $i, &$l){
+        $vals = $i->value($p, ['all' => true]);
+        foreach ($vals as $v) {
+            if(!isset($l[$p]))$l[$p]=[];
+            $l[$p][]=$v->valueResource();
+        }
+        /*
+        $r = $i->value($p) ? $i->value($p)->valueResource() : false;
+        if($r){
+            $l[$p.":id"]= $r->id();
+            $l[$p.":title"]= $r->displayTitle();
+            if($r->resourceName()=='media'){
+                $l[$p.":type"]= $r->mediaType();
+                $l[$p.":url"]= $r->originalUrl();
+            }else{                        
+                $l[$p.":type"]= $r->resourceName();
+                $l[$p.":url"]= $r->url();
+                $l[$p.":medias"]= $r->media();
+            }                  
+        }
+        */
+        return $l;
+    }
+
 
     /**
      * Création d'un scénario 
@@ -513,36 +632,31 @@ class ScenarioViewHelper extends AbstractHelper
         foreach ($rt->resourceTemplateProperties() as $p) {
           $oP = $p->property();
           switch ($oP->term()) {
-              case "dcterms:title":
+            case "dcterms:title":
                 $oItem = $this->setValeur($data['scenario']['title'],$oP,$oItem); 
+                break;
+            case "skos:inScheme":
+                $oItem = $this->setValeur($data['scenario']['groupBy'],$oP,$oItem); 
                 break;
             case "dcterms:isReferencedBy":
                 $pIRB = $oP;
-                $IRB = $data['type']."-".implode('_',$data['sources']);
+                $IRB = $data['scenario']['isReferencedBy'] ? $data['scenario']['isReferencedBy'] : $data['type']."-".implode('_',$data['facettes']['oa:hasSource']);
                 $oItem = $this->setValeur($IRB,$oP,$oItem); 
                 break;
-            case "oa:hasSource":
-                foreach ($data['sources'] as $s) {
-                    $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
-                }
-                break;                    
             case "schema:category":
                 foreach ($data['categories'] as $s) {
                     $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
                 }
                 break;                    
-            case "oa:hasTarget":
-                foreach ($data['targets'] as $s) {
-                    $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
+            case "oa:hasBody":
+                foreach ($data['bodies'] as $b) {
+                    $oItem = $this->setValeur([['id'=>$b['idObj']]],$oP,$oItem); 
                 }
                 break;                    
-            case "oa:hasBody":
-                foreach ($data['bodies'] as $s) {
-                    $oItem = $this->setValeur([['id'=>$s['idObj']]],$oP,$oItem); 
-                }
-                break;                                                
+            case "oa:hasTarget":
+            case "oa:hasSource":
             case "dcterms:creator":
-                foreach ($data['creators'] as $s) {
+                foreach ($data['facettes'][$oP->term()] as $s) {
                     $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
                 }
                 break;        
@@ -556,21 +670,27 @@ class ScenarioViewHelper extends AbstractHelper
             }
         }
         //vérifie la mise à jour
-        $param = array();
-        $param['property'][0]['property']= $pIRB->id()."";
-        $param['property'][0]['type']='eq';
-        $param['property'][0]['text']=$IRB; 
-        $result = $this->api->search('items',$param)->getContent();
-        if(count($result)){
-            //$oItem
-            $result = $result[0];
-            //conserve la date de création
-            $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
-            $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
-            $result = $this->api->read('items',$result->id())->getContent();
+        if($data['scenario']['idScenario']){
+            $oItem['dcterms:created'][0]['@value']=$data['scenario']['dateCreation'];
+            $this->api->update('items', $data['scenario']['idScenario'], $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
+            $result = $this->api->read('items',$data['scenario']['idScenario'])->getContent();
         }else{
-          $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
-        }              
+            $param = array();
+            $param['property'][0]['property']= $pIRB->id()."";
+            $param['property'][0]['type']='eq';
+            $param['property'][0]['text']=$IRB; 
+            $result = $this->api->search('items',$param)->getContent();
+            if(count($result)){
+                //$oItem
+                $result = $result[0];
+                //conserve la date de création
+                $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
+                $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
+                $result = $this->api->read('items',$result->id())->getContent();
+            }else{
+              $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+            }                  
+        }
         return $result;
     }
 
@@ -691,11 +811,62 @@ class ScenarioViewHelper extends AbstractHelper
 
             $color = "";
             $desc = "";
-            $val = $source->id().' : '.$rc->label().' : '.$target->displayTitle();
+            $val = $rc->label().' : '.$target->displayTitle();
             $id = $source->id().' : '.$rc->id().' : '.$target->id();
             $color = $this->aleaColor();
             $desc = '';
             if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'color'=> $color,'desc'=> $desc];
+            $result[$val]['items'][] = $item;                    
+        }
+        ksort($result);
+        return $result;
+    }    
+
+    /**
+     * Function that groups an array of associative arrays by some key.
+     * 
+     * @param {Array} $data Array that stores multiple item.
+     */
+    function groupBySourceClassBody($data) {
+        $result = array();
+        foreach($data as $item) {
+            //construction de la clef
+            $source = $item->value('oa:hasSource')->valueResource();
+            $body = $item->value('oa:hasBody')->valueResource();
+            $rc = $body->resourceClass();
+
+            $color = "";
+            $desc = "";
+            $val = $rc->label().' : '.$body->displayTitle();
+            $id = $source->id().' : '.$rc->id().' : '.$body->id();
+            $color = $this->aleaColor();
+            $desc = '';
+            if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'color'=> $color,'desc'=> $desc];
+            $result[$val]['items'][] = $item;                    
+        }
+        ksort($result);
+        return $result;
+    }    
+    /**
+     * Function that groups an array of associative arrays by some key.
+     * 
+     * @param {Array} $data Array that stores multiple item.
+     */
+    function groupByScopeSourceClass($data) {
+        $result = array();
+        foreach($data as $item) {
+            //construction de la clef
+            $source = $item->value('oa:hasSource')->valueResource();
+            $scope = $item->value('oa:hasScope')->valueResource();
+            $rc = $source->resourceClass();
+
+            $color = "";
+            $desc = "";
+            $val = $rc->label().' : '.$source->displayTitle();
+            $id = 'groupByScopeSourceClass:'.$scope->id().':'.$rc->id().':'.$source->id();
+            $color = $this->aleaColor();
+            $desc = '';
+            if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'source'=> $source,'class'=> $rc,'color'=> $color,'desc'=> $desc];
             $result[$val]['items'][] = $item;                    
         }
         ksort($result);
