@@ -203,17 +203,17 @@ class ScenarioViewHelper extends AbstractHelper
             //vérifie les valeurs de la propriété pour l'item
             $vals = $item->value($p,['all'=>true]);
             foreach ($vals as $i=>$v) {
+                $term = 'relation';
+                $data = [];
+                $pVal =  $this->getProp($p);
+                $comment = $rt->resourceTemplateProperty($pVal->id())->alternateComment();
+                if(substr($comment,0,6)=='class='){
+                    $term = substr($comment,6); 
+                    $rc =  $this->getRc($term);
+                    $data['o:resource_class'] = ['o:id' => $rc->id()];
+                }
                 //si la valeur n'est pas une ressource on la crée
                 if($v->type()=='literal'){
-                    $data = [];
-                    $term = 'relation';
-                    $pVal =  $this->getProp($p);
-                    $comment = $rt->resourceTemplateProperty($pVal->id())->alternateComment();
-                    if(substr($comment,0,6)=='class='){
-                        $term = substr($comment,6); 
-                        $rc =  $this->getRc($term);
-                        $data['o:resource_class'] = ['o:id' => $rc->id()];
-                    }
                     //vérifie l'existence de l'item
                     $pRef =  $this->getProp('dcterms:isReferencedBy');
                     $query['property'][0]['property']= $pRef->id();
@@ -232,6 +232,14 @@ class ScenarioViewHelper extends AbstractHelper
                        'value_resource_id'=>$itemRef->id(),'property_id'=>$pVal->id(),'type'=>'resource'              
                    ];
                    $update=true;
+                }else{
+                    //met à jour l'item avec la bonne classe
+                    $vr = $v->valueResource();
+                    if(!$vr->resourceClass() && $rc){
+                        $data = json_decode(json_encode($vr), true);
+                        $data['o:resource_class'] = ['o:id' => $rc->id()];
+                        $this->api->update('items', $vr->id(),$data, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
+                    }
                 }
             }
         }
@@ -317,7 +325,7 @@ class ScenarioViewHelper extends AbstractHelper
         foreach ($results as $k => $v) {
             $vals = $item->value($k,['all'=>true]);
             foreach ($vals as $v) {
-                $results[$k][]=$v->valueResource();
+                $this->api->update('items', $item->id(), $dataItem, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
             }
         }
         return $results;

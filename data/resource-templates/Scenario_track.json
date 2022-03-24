@@ -1,0 +1,231 @@
+{
+    "o:label": "Scenario track",
+    "o:resource_template_property": [
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "title",
+            "label": "Title"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/schema.org\/",
+            "vocabulary_label": "schema.org",
+            "local_name": "color",
+            "label": "color"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasActant",
+            "label": "a comme actant"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasAffect",
+            "label": "a comme affect"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasEvenement",
+            "label": "a comme \u00e9v\u00e9nement"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasHistoire",
+            "label": "a comme histoire"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasLieu",
+            "label": "a comme lieu"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasMonde",
+            "label": "a comme monde"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasObjet",
+            "label": "a comme objet"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasScenario",
+            "label": "a comme scenario"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "description",
+            "label": "Description"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasSource",
+            "label": "hasSource"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasBody",
+            "label": "hasBody"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasTarget",
+            "label": "hasTarget"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "hasScope",
+            "label": "hasScope"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "created",
+            "label": "Date Created"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "modified",
+            "label": "Date Modified"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "start",
+            "label": "start"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/www.w3.org\/ns\/oa#",
+            "vocabulary_label": "Web Annotation Ontology",
+            "local_name": "end",
+            "label": "end"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "http:\/\/purl.org\/dc\/terms\/",
+            "vocabulary_label": "Dublin Core",
+            "local_name": "creator",
+            "label": "Creator"
+        }
+    ],
+    "o:resource_class": {
+        "vocabulary_namespace_uri": "http:\/\/schema.org\/",
+        "vocabulary_label": "schema.org",
+        "local_name": "TrackAction",
+        "label": "TrackAction"
+    }
+}
