@@ -365,16 +365,21 @@ class ScenarioViewHelper extends AbstractHelper
         $dateCreation=date(DATE_ATOM);
         switch ($gen) {
             case 'global':
-                $idItem = $query['item_id'];
                 $rt =  $this->api->search('resource_templates', ['label' => 'Indexation vidéo',])->getContent()[0];
-                $item = $this->api->read('items',$idItem)->getContent();
-                $query["resource_template_id"]=$rt->id();//indexation vidéo
+                $ids = $query['item_id'] ? [$query['item_id']] : $post['item_id'];
+                $items = [];
+                $titre = "";
                 $p =  $this->api->search('properties', ['term'=>'oa:hasSource'])->getContent()[0];
-                $query['property'][0]['property']= $p->id();
-                $query['property'][0]['type']='res';
-                $query['property'][0]['text']=$idItem; 
-                $items = $this->api->search('items',$query)->getContent();
-                $titre = $item->value('bibo:shortTitle')->__toString();
+                foreach ($ids as $idItem) {
+                    $item = $this->api->read('items',$idItem)->getContent();
+                    $params = [];
+                    $params["resource_template_id"]=$rt->id();//indexation vidéo
+                    $params['property'][0]['property']= $p->id();
+                    $params['property'][0]['type']='res';
+                    $params['property'][0]['text']=$idItem; 
+                    $items = array_merge($items, $this->api->search('items',$params)->getContent());
+                    $titre .= $item->value('bibo:shortTitle') ? $item->value('bibo:shortTitle')->__toString().' - ' : $item->id().' - ';
+                }
                 //groupe les items par category et creator pour visualiser les point de vue
                 $gItems = $this->groupByCategoryCreator($items);
                 $inScheme = "groupByCategoryCreator";
