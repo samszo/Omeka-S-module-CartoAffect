@@ -747,15 +747,15 @@ class ScenarioViewHelper extends AbstractHelper
       protected function jsonAttachment(&$oItem, $data)
       {
         //creation du fichier temporaire
-        $d = getcwd().'/tmp';
-        if(!is_dir($d))mkdir($d, 0700);
+        $d = '/var/www/html/jdc/tmp';//;getcwd().'/tmp';
+        //if(!is_dir($d))mkdir($d, 0700);
         $p = $d.'/'.uniqid().'data.json';
         $this->temp = fopen($p, 'w');
         fwrite($this->temp, json_encode($data));
         fclose($this->temp);
         chmod($p, 0755);
         $this->temp = $p;
-        $url = str_replace('/var/www/html/jdc', $_SERVER['HTTP_ORIGIN'],$p);
+        $url = str_replace('/var/www/html/jdc', 'https://jardindesconnaissances.univ-paris8.fr',$p);
         $property = $this->getProp('dcterms:title');
         $oItem['o:media'][] = [
             'o:ingester' => 'url',
