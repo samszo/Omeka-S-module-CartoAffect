@@ -755,7 +755,7 @@ class ScenarioViewHelper extends AbstractHelper
         fclose($this->temp);
         chmod($p, 0755);
         $this->temp = $p;
-        $url = str_replace('/var/www/html', $_SERVER['HTTP_ORIGIN'],$p);
+        $url = str_replace('/var/www/html/jdc', $_SERVER['HTTP_ORIGIN'],$p);
         $property = $this->getProp('dcterms:title');
         $oItem['o:media'][] = [
             'o:ingester' => 'url',
