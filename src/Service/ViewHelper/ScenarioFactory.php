@@ -11,6 +11,7 @@ class ScenarioFactory implements FactoryInterface
     {
         $api = $services->get('Omeka\ApiManager');
         $acl = $services->get('Omeka\Acl');
-        return new ScenarioViewHelper($api, $acl);
+        $config = $services->get('Config');
+        return new ScenarioViewHelper($api, $acl, $config);
     }
 }

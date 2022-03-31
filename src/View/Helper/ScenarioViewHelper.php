@@ -8,17 +8,20 @@ class ScenarioViewHelper extends AbstractHelper
 {
     protected $api;
     protected $acl;
+    protected $config;
     protected $doublons;
     protected $props;
     protected $rcs;
     protected $rts;
     protected $propsValueRessource=['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
         ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'];
+    protected $temp;
 
-    public function __construct($api,$acl)
+    public function __construct($api,$acl,$config)
     {
       $this->api = $api;
       $this->acl = $acl;
+      $this->config = $config;
     }
 
     /**
@@ -38,6 +41,11 @@ class ScenarioViewHelper extends AbstractHelper
                 break;            
             case 'genereScenario':
                 $result = $this->createScenario($this->genScenario($query,$post));
+                $result = [
+                    "o:id"=>$result->id(),
+                    "o:title"=>$result->displayTitle(),
+                    'json'=>$result->primaryMedia()->originalUrl()
+                ];
                 break;            
             case 'getListeFromItem':
                 $result = $this->getScenarios($query['item_id']);
@@ -103,7 +111,8 @@ class ScenarioViewHelper extends AbstractHelper
                 "value"=> 1,
             ];
             //ajoute la track au scenario
-            $data = $this->setValeur([['id'=>$i->id()]],$this->getProp('oa:hasBody'),[]); 
+            $data = [];
+            $this->setValeur([['id'=>$i->id()]],$this->getProp('oa:hasBody'),$data); 
             $this->api->update('items', $post['idScenario'], $data, [], ['isPartial'=>1,'collectionAction' => 'append']);
             return $result;               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer."];
@@ -130,11 +139,11 @@ class ScenarioViewHelper extends AbstractHelper
                 switch ($oP->term()) {
                 case "dcterms:created":
                 case "dcterms:modified":
-                    $oItem = $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
+                    $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
                     break;                                                            
                 default:
                     if(isset($params[$oP->term()])){
-                        $oItem = $this->setValeur($params[$oP->term()],$oP,$oItem); 
+                        $this->setValeur($params[$oP->term()],$oP,$oItem); 
                     }
                     break;
                 }
@@ -171,9 +180,9 @@ class ScenarioViewHelper extends AbstractHelper
             //récupère les identifiants des tracks
             $ids = [];
             $ids[]=$id;
-            $tracks = $oItem->value('oa:hasBody', ['all' => true]);
+            $tracks = $this->getScenarioTracks($id);
             foreach ($tracks as $t) {
-                $ids[]=$t->valueResource()->id();
+                $ids[]=$t->id();
             }
             $response = $this->api->batchDelete('items',$ids, [], ['continueOnError' => true]);
             $result= ['message'=>"Scenario supprimé."];           
@@ -283,16 +292,16 @@ class ScenarioViewHelper extends AbstractHelper
                 if(isset($params[$oP->term()]) && $params[$oP->term()]){
                     $val = $params[$oP->term()];
                     if(!is_array($val)) $val= [['id'=>$val]];
-                    $oItem = $this->setValeur($val,$oP,$oItem); 
+                    $this->setValeur($val,$oP,$oItem); 
                 }
                 break;                    
             case "dcterms:created":
             case "dcterms:modified":
-                $oItem = $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
+                $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
                 break;                                                            
             default:
                 if(isset($params[$oP->term()])){
-                    $oItem = $this->setValeur($params[$oP->term()],$oP,$oItem); 
+                    $this->setValeur($params[$oP->term()],$oP,$oItem); 
                 }
                 break;
             }
@@ -350,6 +359,23 @@ class ScenarioViewHelper extends AbstractHelper
         $query['property'][0]['text']=$idItem; 
         return $this->api->search('items',$query)->getContent();
     }
+
+    /**
+     * récupération des traks d'un scénario
+     * 
+     * @param array     $id
+     *
+     * @return array
+     */
+    function getScenarioTracks($id){
+        $param = array();
+        $param['property'][0]['property']= $this->getProp('genstory:hasScenario')->id();
+        $param['property'][0]['type']='res';
+        $param['property'][0]['text']=$id; 
+        return $this->api->search('items',$param)->getContent();
+    }
+
+
     /**
      * Génération d'un scénario à partir de toutes les indexations d'un item
      * 
@@ -427,26 +453,23 @@ class ScenarioViewHelper extends AbstractHelper
                 $items = [];
                 $item = $this->api->read('items',$post['idScenario'])->getContent();
                 $titre = $item->displayTitle();
-                $tracks = $item->value('oa:hasBody',['all'=>true]);
+                $tracks = $this->getScenarioTracks($post['idScenario']);
                 $inScheme = $item->value('skos:inScheme') ? $item->value('skos:inScheme')->__toString() : '';
                 $IRB = $item->value('dcterms:isReferencedBy')->__toString();
                 $dateCreation=$item->value('dcterms:created')->__toString();
                 if(substr($IRB,0,7)!='fromUti')$IRB='fromUti-'.$post['idActant'].':'.$IRB;
-                foreach ($tracks as $t) {
-                    $items[] = $t->valueResource();
-                }
                 switch ($inScheme) {
                     case "groupByScopeSourceClass":
-                        $gItems = $this->groupByScopeSourceClass($items);
+                        $gItems = $this->groupByScopeSourceClass($tracks);
                         break;
                     case "groupBySourceClassTarget":
-                        $gItems = $this->groupBySourceClassTarget($items);
+                        $gItems = $this->groupBySourceClassTarget($tracks);
                         break;
                     case "groupBySourceClassBody":
-                        $gItems = $this->groupBySourceClassBody($items);
+                        $gItems = $this->groupBySourceClassBody($tracks);
                         break;                            
                     default:
-                        $gItems = $this->groupByCategoryCreator($items);
+                        $gItems = $this->groupByCategoryCreator($tracks);
                         break;
                 }
                 break;
@@ -638,83 +661,122 @@ class ScenarioViewHelper extends AbstractHelper
      * @return json
      */
     function createScenario($data){
+        set_time_limit(300);
         $rt =  $this->api->search('resource_templates', ['label' => $data['rt'],])->getContent()[0];
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
         $oItem['o:resource_template'] = ['o:id' => $rt->id()];
-        foreach ($rt->resourceTemplateProperties() as $p) {
+        $rtp = $rt->resourceTemplateProperties(); 
+        foreach ($rtp as $p) {
           $oP = $p->property();
           switch ($oP->term()) {
             case "dcterms:title":
-                $oItem = $this->setValeur($data['scenario']['title'],$oP,$oItem); 
+                $this->setValeur($data['scenario']['title'],$oP,$oItem); 
                 break;
             case "skos:inScheme":
-                $oItem = $this->setValeur($data['scenario']['groupBy'],$oP,$oItem); 
+                $this->setValeur($data['scenario']['groupBy'],$oP,$oItem); 
                 break;
             case "dcterms:isReferencedBy":
                 $pIRB = $oP;
                 $IRB = $data['scenario']['isReferencedBy'] ? $data['scenario']['isReferencedBy'] : $data['type']."-".implode('_',$data['facettes']['oa:hasSource']);
-                $oItem = $this->setValeur($IRB,$oP,$oItem); 
+                $this->setValeur($IRB,$oP,$oItem); 
                 break;
+            /*trop gourmand en ressource
+            case "schema:object":
+                $this->setValeur(json_encode($data['scenario']),$oP,$oItem); 
+                break;                                                                                
             case "schema:category":
                 foreach ($data['categories'] as $s) {
-                    $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
+                    $this->setValeur([['id'=>$s]],$oP,$oItem); 
                 }
                 break;                    
             case "oa:hasBody":
                 foreach ($data['bodies'] as $b) {
-                    $oItem = $this->setValeur([['id'=>$b['idObj']]],$oP,$oItem); 
+                    $this->setValeur([['id'=>$b['idObj']]],$oP,$oItem); 
                 }
                 break;                    
             case "oa:hasTarget":
             case "oa:hasSource":
+            */
             case "dcterms:creator":
                 foreach ($data['facettes'][$oP->term()] as $s) {
-                    $oItem = $this->setValeur([['id'=>$s]],$oP,$oItem); 
+                    $this->setValeur([['id'=>$s]],$oP,$oItem); 
                 }
                 break;        
             case "dcterms:created":
             case "dcterms:modified":
-                $oItem = $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
+                $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
                 break;                                                            
-            case "schema:object":
-                $oItem = $this->setValeur(json_encode($data['scenario']),$oP,$oItem); 
-                break;                                                                                
             }
         }
+
+        //attachement du fichier json
+        $this->jsonAttachment($oItem, $data['scenario']);
+        
         //vérifie la mise à jour
         if($data['scenario']['idScenario']){
             $oItem['dcterms:created'][0]['@value']=$data['scenario']['dateCreation'];
             $this->api->update('items', $data['scenario']['idScenario'], $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
             $result = $this->api->read('items',$data['scenario']['idScenario'])->getContent();
         }else{
-            $param = array();
-            $param['property'][0]['property']= $pIRB->id()."";
-            $param['property'][0]['type']='eq';
-            $param['property'][0]['text']=$IRB; 
-            $result = $this->api->search('items',$param)->getContent();
-            if(count($result)){
-                //$oItem
-                $result = $result[0];
-                //conserve la date de création
-                $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
-                $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
-                $result = $this->api->read('items',$result->id())->getContent();
-            }else{
-              $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
-            }                  
+            $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+            //mise à jour des tracks avec l'identifiant du scenario
+            $ids = [];
+            $dt = [];
+            $this->setValeur([['id'=>$result->id()]],$this->getProp('genstory:hasScenario'),$dt); 
+            foreach ($data['bodies'] as $b) {
+                //
+                $this->api->update('items', $b['idObj'], $dt, [], ['isPartial'=>1,'collectionAction' => 'append']);
+                //
+                $ids[]=$b['idObj'];
+            }
+            //$response = $this->api->batchUpdate('items',$ids, $dt, [], ['isPartial'=>1,'collectionAction' => 'append']);
         }
+
+        //suppression du fichier temporaire
+        unlink($this->temp);
         return $result;
     }
+
+    /**
+     * json attachment.
+     *
+     * @param array $oItem
+     * @param array $data
+      */
+      protected function jsonAttachment(&$oItem, $data)
+      {
+        //creation du fichier temporaire
+        $d = getcwd().'/tmp';
+        if(!is_dir($d))mkdir($d, 0700);
+        $p = $d.'/'.uniqid().'data.json';
+        $this->temp = fopen($p, 'w');
+        fwrite($this->temp, json_encode($data));
+        fclose($this->temp);
+        $this->temp = $p;
+        $url = str_replace('/var/www/html', $_SERVER['HTTP_ORIGIN'],$p);
+        $property = $this->getProp('dcterms:title');
+        $oItem['o:media'][] = [
+            'o:ingester' => 'url',
+            'o:source'   => $url,
+            'ingest_url' => $url,
+            $property->term() => [
+                [
+                    '@value' => 'json file',
+                    'property_id' => $property->id(),
+                    'type' => 'literal',
+                ],
+            ],
+        ];
+      }
 
      /** Construction de la valeur
      *
      * @param   array   $val
      * @param   object  $oP
-     * @param   array   $oItem
-     * @return  array
+     * @param   array   $oItem //par référence pour gagner de la mémoire
      */
-    protected function setValeur($val, $oP, $oItem)
+    protected function setValeur($val, $oP, &$oItem)
     {
       if(is_string($val))$val=[$val];
       foreach ($val as $v) {
@@ -730,7 +792,6 @@ class ScenarioViewHelper extends AbstractHelper
         } 
         $oItem[$oP->term()][]=$valueObject;
       }
-      return $oItem;  
     }
 
     /**
