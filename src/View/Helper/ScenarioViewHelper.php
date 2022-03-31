@@ -753,6 +753,7 @@ class ScenarioViewHelper extends AbstractHelper
         $this->temp = fopen($p, 'w');
         fwrite($this->temp, json_encode($data));
         fclose($this->temp);
+        chmod($p, 0755);
         $this->temp = $p;
         $url = str_replace('/var/www/html', $_SERVER['HTTP_ORIGIN'],$p);
         $property = $this->getProp('dcterms:title');
