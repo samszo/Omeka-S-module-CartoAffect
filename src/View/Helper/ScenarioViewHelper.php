@@ -755,7 +755,7 @@ class ScenarioViewHelper extends AbstractHelper
         fclose($this->temp);
         chmod($p, 0755);
         $this->temp = $p;
-        $url = str_replace('/var/www/html/jdc', 'https://jardindesconnaissances.univ-paris8.fr',$p);
+        $url = str_replace('/var/www/html/jdc', 'http://192.168.30.232',$p);
         $property = $this->getProp('dcterms:title');
         $oItem['o:media'][] = [
             'o:ingester' => 'url',
