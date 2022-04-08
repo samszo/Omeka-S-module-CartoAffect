@@ -2,6 +2,7 @@
 namespace CartoAffect\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Exception\RuntimeException;
 use DateTime;
 
 class ScenarioViewHelper extends AbstractHelper
@@ -16,12 +17,17 @@ class ScenarioViewHelper extends AbstractHelper
     protected $propsValueRessource=['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
         ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'];
     protected $temp;
+    protected $tempPath;
+    protected $tempUrl;
 
     public function __construct($api,$acl,$config)
     {
       $this->api = $api;
       $this->acl = $acl;
       $this->config = $config;
+        $this->tempPath = OMEKA_PATH.'/files/tmp';
+        $this->tempUrl = $_SERVER['HTTPS'] ? 'https' :'http';
+        $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
     }
 
     /**
@@ -40,6 +46,9 @@ class ScenarioViewHelper extends AbstractHelper
                 $result = $this->deleteScenario($query['item_id']);
                 break;            
             case 'genereScenario':
+                if(!is_writable($this->tempPath)){
+                    throw new RuntimeException("Le dossier '".$this->tmpPath."' n'est pas accessible en écriture.");			
+                }        
                 $result = $this->createScenario($this->genScenario($query,$post));
                 $result = [
                     "o:id"=>$result->id(),
@@ -552,6 +561,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $vals[]= [
                     "time"=>$v["timeEnd"],
                     "value"=> 1,
+                    "idObj"=>$v["idObj"],
                 ];
                 if($totalTime<$v["timeEnd"])$totalTime=$v["timeEnd"];
             };
@@ -721,14 +731,10 @@ class ScenarioViewHelper extends AbstractHelper
         }else{
             $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
             //mise à jour des tracks avec l'identifiant du scenario
-            $ids = [];
             $dt = [];
             $this->setValeur([['id'=>$result->id()]],$this->getProp('genstory:hasScenario'),$dt); 
             foreach ($data['bodies'] as $b) {
-                //
                 $this->api->update('items', $b['idObj'], $dt, [], ['isPartial'=>1,'collectionAction' => 'append']);
-                //
-                $ids[]=$b['idObj'];
             }
             //$response = $this->api->batchUpdate('items',$ids, $dt, [], ['isPartial'=>1,'collectionAction' => 'append']);
         }
@@ -747,15 +753,13 @@ class ScenarioViewHelper extends AbstractHelper
       protected function jsonAttachment(&$oItem, $data)
       {
         //creation du fichier temporaire
-        $d = '/var/www/html/jdc/tmp';//;getcwd().'/tmp';
-        //if(!is_dir($d))mkdir($d, 0700);
-        $p = $d.'/'.uniqid().'data.json';
-        $this->temp = fopen($p, 'w');
-        fwrite($this->temp, json_encode($data));
-        fclose($this->temp);
-        chmod($p, 0755);
-        $this->temp = $p;
-        $url = str_replace('/var/www/html/jdc', 'http://192.168.30.232',$p);
+        $p = uniqid().'.json';
+        $this->temp = $this->tempPath.'/'.$p;
+        $f = fopen($this->temp, 'w');
+        fwrite($f, json_encode($data));
+        fclose($f);
+        $url =$this->tempUrl.'/'.$p;
+        //ATTENTION sur JDC il faut utiliser l'IP
         $property = $this->getProp('dcterms:title');
         $oItem['o:media'][] = [
             'o:ingester' => 'url',
