@@ -304,7 +304,9 @@ class ScenarioViewHelper extends AbstractHelper
                     $this->setValeur($val,$oP,$oItem); 
                 }
                 break;                    
-            case "dcterms:created":
+            case "genstory:hasScenario":
+                $this->setValeur([['id'=>$params['idScenario']]],$oP,$oItem); 
+        case "dcterms:created":
             case "dcterms:modified":
                 $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
                 break;                                                            
