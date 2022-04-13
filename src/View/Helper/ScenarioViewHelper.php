@@ -68,8 +68,9 @@ class ScenarioViewHelper extends AbstractHelper
             case 'deleteTrack':
                 $result = $this->deleteTrack($post);
                 break;
+            case 'saveTrack':
             case 'saveIndex':
-                $i = $this->saveIndex($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
+                $i = $this->saveTrack($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
                 $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
                 $result[] = [
                     "time"=>$post["oa:end"],
@@ -113,7 +114,7 @@ class ScenarioViewHelper extends AbstractHelper
     function createTrack($post){
         $rs = $this->acl->userIsAllowed(null,'create');
         if($rs){
-            $i = $this->saveIndex($post,$post['rt']);
+            $i = $this->saveTrack($post,$post['rt']);
             $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
             $result[] = [
                 "time"=>$post["oa:end"],
@@ -275,7 +276,7 @@ class ScenarioViewHelper extends AbstractHelper
      *
      * @return o:item
      */
-    function saveIndex($params, $rtLabel){
+    function saveTrack($params, $rtLabel){
         //enregistre une indexation dans la base
         $rt =  $this->getRt($rtLabel);
         $oItem = [];
@@ -448,7 +449,7 @@ class ScenarioViewHelper extends AbstractHelper
                                 ];
                                 if($target)$params['oa:hasTarget']= $target->id();
                                 $params[$p]=$itemVal->id();                            
-                                $items[] = $this->saveIndex($params,'Scenario track');
+                                $items[] = $this->saveTrack($params,'Scenario track');
                             }
                         }            
                     }
