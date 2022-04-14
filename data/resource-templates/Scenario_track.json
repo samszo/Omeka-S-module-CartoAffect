@@ -64,6 +64,28 @@
             "data_types": [],
             "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
             "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasFonction",
+            "label": "a comme fonction"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "local_name": "hasParam",
+            "label": "a comme param\u00e8tres"
+        },
+        {
+            "o:alternate_label": null,
+            "o:alternate_comment": null,
+            "o:is_required": false,
+            "o:is_private": false,
+            "data_types": [],
+            "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
+            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
             "local_name": "hasHistoire",
             "label": "a comme histoire"
         },

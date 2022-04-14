@@ -15,7 +15,8 @@ class ScenarioViewHelper extends AbstractHelper
     protected $rcs;
     protected $rts;
     protected $propsValueRessource=['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
-        ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'];
+        ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'
+        ,'genstory:hasFonction','genstory:hasParam'];
     protected $temp;
     protected $tempPath;
     protected $tempUrl;
@@ -307,7 +308,8 @@ class ScenarioViewHelper extends AbstractHelper
                 break;                    
             case "genstory:hasScenario":
                 $this->setValeur([['id'=>$params['idScenario']]],$oP,$oItem); 
-        case "dcterms:created":
+                break;                    
+            case "dcterms:created":
             case "dcterms:modified":
                 $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
                 break;                                                            
@@ -316,7 +318,7 @@ class ScenarioViewHelper extends AbstractHelper
                     $this->setValeur($params[$oP->term()],$oP,$oItem); 
                 }
                 break;
-            }
+        }
         }
         //vérifie la mise à jour
         if(isset($params['idObj'])){
@@ -536,7 +538,7 @@ class ScenarioViewHelper extends AbstractHelper
                         $facettes[$p]=[];
                     }
                     foreach ($e[$p] as $v) {
-                        if(!isset($doublons[$p][$v->id()])){
+                        if(is_object($v) && !isset($doublons[$p][$v->id()])){
                             $facettes[$p][]=$v->id();
                             $doublons[$p][$v->id()]=1;
                         }
@@ -645,7 +647,7 @@ class ScenarioViewHelper extends AbstractHelper
         $vals = $i->value($p, ['all' => true]);
         foreach ($vals as $v) {
             if(!isset($l[$p]))$l[$p]=[];
-            $l[$p][]=$v->valueResource();
+            $l[$p][]=$v->type()=="resource" ? $v->valueResource() : $v->__toString();
         }
         /*
         $r = $i->value($p) ? $i->value($p)->valueResource() : false;

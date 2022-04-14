@@ -89,3 +89,13 @@ genstory:hasMonde a rdf:Property ;
     rdfs:label "a comme monde" ;
     rdfs:domain o:Resource ;
     vs:term_status "experimental" .
+
+genstory:hasFonction a rdf:Property ;
+    rdfs:label "a comme fonction" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
+
+genstory:hasParam a rdf:Property ;
+    rdfs:label "a comme paramètres" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
