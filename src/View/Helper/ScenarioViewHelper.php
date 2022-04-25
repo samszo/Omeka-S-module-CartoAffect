@@ -16,7 +16,7 @@ class ScenarioViewHelper extends AbstractHelper
     protected $rts;
     protected $propsValueRessource=['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
         ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'
-        ,'genstory:hasFonction','genstory:hasParam'];
+        ,'genstory:hasFonction','genstory:hasParam','schema:category','jdc:hasPhysique','jdc:hasActant','jdc:hasConcept'];
     protected $temp;
     protected $tempPath;
     protected $tempUrl;
@@ -48,15 +48,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $result = $this->deleteScenario($query['item_id']);
                 break;            
             case 'genereScenario':
-                if(!is_writable($this->tempPath)){
-                    throw new RuntimeException("Le dossier '".$this->tmpPath."' n'est pas accessible en écriture.");			
-                }        
-                $result = $this->createScenario($this->genScenario($query,$post));
-                $result = [
-                    "o:id"=>$result->id(),
-                    "o:title"=>$result->displayTitle(),
-                    'json'=>$result->primaryMedia()->originalUrl()
-                ];
+                $result = $this->genereScenario($query,$post);
                 break;            
             case 'getListeFromItem':
                 $result = $this->getScenarios($query['item_id']);
@@ -75,8 +67,9 @@ class ScenarioViewHelper extends AbstractHelper
                 $i = $this->saveTrack($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
                 $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
                 $result[] = [
-                    "time"=>$post["oa:end"],
+                    "time"=> (float)$post["oa:end"],
                     "value"=> 1,
+                    "idObj"=>$post["idObj"]
                 ];
                 break;
             case 'addCategory':                
@@ -85,12 +78,91 @@ class ScenarioViewHelper extends AbstractHelper
             case 'createRelations':                                
                 $result = $this->createRelations($post);
                 break;
+            case 'scenarioTxtToObj':
+                $this->scenarioTxtToObj($post['idScenario']);
+                $result = [];
+                break;
             default:
                 $result = [];
                 break;
         }
         return $result;
     }
+
+    /**
+     * génère des objets à partir des textes du scenario
+     * 
+     * @param   int   $idItem
+     *
+     * @return array
+     */
+    function scenarioTxtToObj($idItem){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            $item = $this->api->read('items', $idItem)->getContent();
+            //récupère toutes les tracks
+            $tracks = $this->getScenarioTracks($idItem);
+            foreach ($tracks as $t) {
+                //vérifie si le titre de l'item est une ressource de la bonne class
+                $existe = false;
+                $titreTrack = $t->value('dcterms:title')->__toString();
+                $cat = $t->value('schema:category')->valueResource();
+                $catClass = $cat->value('skos:narrower') ? $cat->value('skos:narrower')->__toString() : 'skos:Concept';
+                $catProp = $cat->value('skos:hasTopConcept') ? $cat->value('skos:hasTopConcept')->__toString() : 'jdc:hasPhysique';
+                $vals = $t->value($catProp,['all'=>true]);                                                
+                foreach ($vals as $v) {
+                    $titreRL = $v->valueResource()->displayTitle();
+                    if($titreRL==$titreTrack)$existe = true;
+                }
+                if(!$existe){
+                    $dataTrack = json_decode(json_encode($t), true);
+                    //vérifie si la ressource existe
+                    $query['property'][0]['property']= $this->getProp('dcterms:title')->id();
+                    $query['property'][0]['type']='eq';
+                    $query['property'][0]['text']=$titreTrack; 
+                    $query['resource_class_id']=$this->getRc($catClass)->id();
+                    $result = $this->api->search('items',$query)->getContent();
+                    if(!count($result)){
+                        //création de la resource
+                        $data = [
+                            'o:resource_class'=>['o:id' => $query['resource_class_id']],
+                            'dcterms:title'=>[['@value' => $titreTrack,'type' => 'literal', 'property_id'=>$query['property'][0]['property']]]
+                        ];
+                        $itemRef = $this->api->create('items',$data)->getContent();                          
+                    }else $itemRef=$result[0];
+                    $iProp = isset($dataTrack[$catProp]) ? count($dataTrack[$catProp]) : 0;
+                    $dataTrack[$catProp][$iProp]=[
+                        'value_resource_id'=>$itemRef->id(),'property_id'=>$this->getProp($catProp)->id(),'type'=>'resource'              
+                    ];
+                    $this->api->update('items', $t->id(),$dataTrack, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
+                }
+
+            }
+        }
+    }
+
+
+    /**
+     * génère un scénario
+     * 
+     * @param   array   $query
+     * @param   array   $post
+     *
+     * @return array
+     */
+    function genereScenario($query, $post){
+        if(!is_writable($this->tempPath)){
+            throw new RuntimeException("Le dossier '".$this->tmpPath."' n'est pas accessible en écriture.");			
+        }        
+        $result = $this->createScenario($this->genScenario($query,$post));
+        return [
+            "o:id"=>$result->id(),
+            "o:title"=>$result->displayTitle(),
+            'json'=>$result->primaryMedia()->originalUrl()
+        ];
+
+    }
+
 
     /**
      * supression d'un track
@@ -401,6 +473,8 @@ class ScenarioViewHelper extends AbstractHelper
      */
     function genScenario($query, $post=false){
         $gen = $query['gen'];
+        $inScheme = isset($query['inScheme']) ? $query['inScheme'] : 'no';
+        $titre = $post['dcterms:title'] ? $post['dcterms:title'] : "new scenario";
         $rt = 'Scenario';
         $IRB = "";
         $dateCreation=date(DATE_ATOM);
@@ -461,7 +535,6 @@ class ScenarioViewHelper extends AbstractHelper
                 $gItems = $this->groupByScopeSourceClass($items);
                 $IRB = $gen.'-'.$item->id();
                 $inScheme = "groupByScopeSourceClass";
-                $titre = $post['dcterms:title'] ? $post['dcterms:title'] : $titre;
                 break;            
             case 'fromUti':
                 //récupère les tracks du scenario pour mettre à jour les infos des sources
@@ -483,6 +556,7 @@ class ScenarioViewHelper extends AbstractHelper
                     case "groupBySourceClassBody":
                         $gItems = $this->groupBySourceClassBody($tracks);
                         break;                            
+                    case "groupByCategoryCreator":
                     default:
                         $gItems = $this->groupByCategoryCreator($tracks);
                         break;
@@ -490,7 +564,6 @@ class ScenarioViewHelper extends AbstractHelper
                 break;
             default:
                 $gItems = []; 
-                $inScheme = "no";
                 break;
         }
         
@@ -576,9 +649,9 @@ class ScenarioViewHelper extends AbstractHelper
         }
 
         //mise à jour des temporalités globales        
-        $scenario['ui']['currentTime']=$debTime;
-        $scenario['ui']['totalTime']=$totalTime;
-        $scenario['ui']['scrollTime']=$debTime;
+        $scenario['ui']['currentTime']=$totalTime==0 ? 0 : $debTime;
+        $scenario['ui']['totalTime']=$totalTime==0 ? 60 : $totalTime;
+        $scenario['ui']['scrollTime']=$totalTime==0 ? 0 : $debTime;
         return ["rt"=>$rt,"type"=>$gen,"scenario"=>$scenario,"bodies"=>$bodies,"facettes"=>$facettes,"categories"=>$categories];
     }
 
@@ -648,7 +721,17 @@ class ScenarioViewHelper extends AbstractHelper
         $vals = $i->value($p, ['all' => true]);
         foreach ($vals as $v) {
             if(!isset($l[$p]))$l[$p]=[];
-            $l[$p][]=$v->type()=="resource" ? $v->valueResource() : $v->__toString();
+            switch ($v->type()) {
+                case "literal":
+                    $l[$p][]= $v->__toString();
+                    break;
+                case "uri":
+                    $l[$p][]= $v->__toString();
+                    break;                    
+                default://pour gérer les customvocabs
+                    $l[$p][]= $v->valueResource(); 
+                    break;
+            }
         }
         /*
         $r = $i->value($p) ? $i->value($p)->valueResource() : false;
@@ -694,7 +777,9 @@ class ScenarioViewHelper extends AbstractHelper
                 break;
             case "dcterms:isReferencedBy":
                 $pIRB = $oP;
-                $IRB = $data['scenario']['isReferencedBy'] ? $data['scenario']['isReferencedBy'] : $data['type']."-".implode('_',$data['facettes']['oa:hasSource']);
+                $IRB = $data['scenario']['isReferencedBy'] ? $data['scenario']['isReferencedBy'] 
+                    : $data['type']."-";
+                $IRB .= $data['facettes'] ? implode('_',$data['facettes']['oa:hasSource']) : ' - ';
                 $this->setValeur($IRB,$oP,$oItem); 
                 break;
             /*trop gourmand en ressource

@@ -94,6 +94,40 @@ class QuerySqlViewHelper extends AbstractHelper
              ";
      $rs = $this->conn->fetchAll($query,[$idRT, $idP]);
      return $rs;       
- }
+    }
+
+    /**
+     * recherche sur le titre des resources liées à une propriété
+     *
+     * @param int     $idP identifiant de le propriété
+     * @param string  $txt texte à rechercher dans le titre
+     * @return array
+     */
+    /*
+    function searchLinkedResourcesByTitle($idRT, $idP){
+        $query ="SELECT 
+                p.local_name,
+                p.id,
+                COUNT(DISTINCT r.id) nb,
+                v.value,
+                v.value_resource_id,
+                rt.title
+            FROM
+                resource r
+                    INNER JOIN
+                value v ON v.resource_id = r.id
+                    INNER JOIN
+                property p ON p.id = v.property_id
+                    LEFT JOIN
+                resource rt ON rt.id = v.value_resource_id
+            WHERE
+                r.resource_template_id = ?
+                    AND p.id = ?
+            GROUP BY v.value , value_resource_id    
+             ";
+     $rs = $this->conn->fetchAll($query,[$idRT, $idP]);
+     return $rs;       
+    }
+    */
 
 }
