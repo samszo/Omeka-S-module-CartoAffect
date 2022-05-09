@@ -41,8 +41,11 @@ class ScenarioViewHelper extends AbstractHelper
      */
     public function __invoke($params)
     {
-        $query = $params->fromQuery();
-        $post = $params->fromPost();
+        if(is_array($params))$query = $params;
+        else{
+            $query = $params->fromQuery();
+            $post = $params->fromPost();    
+        }
         switch ($query['type']) {
             case 'deleteScenario':
                 $result = $this->deleteScenario($query['item_id']);
@@ -56,24 +59,22 @@ class ScenarioViewHelper extends AbstractHelper
             case 'getIndexFromScenario':
                 $result = $this->getIndex($query['item_id']);
                 break;
-            case 'createTrack':
-                $result = $this->createTrack($post);
-                break;
             case 'deleteTrack':
                 $result = $this->deleteTrack($post);
                 break;
+            case 'deleteLayer':
+                $result = $this->deleteLayer($post);
+                break;
             case 'saveTrack':
             case 'saveIndex':
-                $i = $this->saveTrack($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
-                $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
-                $result[] = [
-                    "time"=> (float)$post["oa:end"],
-                    "value"=> 1,
-                    "idObj"=>$post["idObj"]
-                ];
+            case 'createTrack':
+                $result = $this->createTrack($post);
                 break;
             case 'addCategory':                
                 $result = $this->addCategory($post);
+                break;
+            case 'addLayers':                
+                $result = $this->addLayers($query['idScenario'],$post);
                 break;
             case 'createRelations':                                
                 $result = $this->createRelations($post);
@@ -82,11 +83,158 @@ class ScenarioViewHelper extends AbstractHelper
                 $this->scenarioTxtToObj($post['idScenario']);
                 $result = [];
                 break;
+            case 'getRtSuggestion':
+                $result = $this->getRtSuggestion($query['label'],$query['urlApi']);
+                break;
             default:
                 $result = [];
                 break;
         }
         return $result;
+    }
+
+
+    /**
+     * ajoute des couches au scénario
+     * 
+     * @param   int     $idScenario
+     * @param   array   $post
+     *
+     * @return array
+     */
+    function addLayers($idScenario, $post){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            $rs = [];
+            $s = $this->api->read('items', $idScenario)->getContent();
+            //boucle sur les relations
+            foreach ($post['layers'] as $k => $vals) {
+                foreach($vals['rela'] as $v){
+                    if(is_string($v)){
+                        //creation de la catégorie
+                        $oItem = [];
+                        $oItem['o:resource_class'] = ['o:id' => $this->getRc($vals['c'])->id()];
+                        $this->setValeur(date(DATE_ATOM),$this->getProp("dcterms:created"),$oItem);
+                        $this->setValeur($v,$this->getProp("dcterms:title"),$oItem);
+                        $cat = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+                    }else $cat = $this->api->read('items', $v['id'])->getContent();
+                    //vérifie si une track existe avec pour source cette catégorie et ce scénario
+                    $query['property'][0]['property']= $this->getProp('genstory:hasScenario')->id();
+                    $query['property'][0]['type']='res';
+                    $query['property'][0]['text']=$idScenario; 
+                    $query['property'][1]['property']= $this->getProp('oa:hasSource')->id();
+                    $query['property'][1]['type']='res';
+                    $query['property'][1]['text']=$cat->id(); 
+                    $result = $this->api->search('items',$query)->getContent();
+                    if($result){
+                        $rs[]=[
+                        'message'=>'la couche "'.$cat->displayTitle().'" ('.$cat->id().') existe déjà dans ce scénario'
+                        ];
+                    }else{
+                        $inScheme = $s->value('skos:inScheme') ? $s->value('skos:inScheme')->__toString() : '';
+                        $rc = $cat->resourceClass();
+                        switch ($inScheme) {
+                            case "groupByScopeSourceClass":
+                                $idScope = isset($post['track']['idScope']) ? $post['track']['idScope'] : $this->getScope($post['track']['scope'])->id(); 
+                                $post['track']['oa:hasScope']=$idScope;
+                                $post['track']['idGroup']='groupByScopeSourceClass:'.$idScope.':'.$rc->id().':'.$cat->id();
+                                $post['track']['category']=$rc->label().' : '.$cat->displayTitle();
+                                break;
+                            case "groupBySourceClassTarget":
+                                $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
+                                $post['track']['category']=$rc->label().' : no';
+                                break;
+                            case "groupBySourceClassBody":
+                                $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
+                                $post['track']['category']=$rc->label().' : no';
+                                break;                            
+                            case "groupByCategoryCreator":
+                            default:
+                                $crea = $this->api->read('items', $post['track']['dcterms:creator'])->getContent();
+                                $post['track']['idGroup']=$cat->id().'_'.$crea->id();
+                                $post['track']['category']=$cat->displayTitle().' : '.$crea->displayTitle();
+                                break;
+                        }        
+                        //création de la couche                        
+                        $post['track']['dcterms:title']=$this->getRc($vals['c'])->label().' : '.$cat->displayTitle();
+                        $post['track']['oa:start']=0;
+                        $post['track']['oa:end']=5;
+                        $post['track']['schema:color']=$this->aleaColor();
+                        $post['track']['oa:hasSource']=$cat->id();
+                        $post['track'][$k]=$cat->id();
+                        $rs[]=[
+                            'message'=>'La couche '.$cat->displayTitle().' ('.$cat->id().') est crée dans ce scénario'
+                            ,'track'=>$this->createTrack($post['track'])
+                            ,'cat'=>$cat
+                        ];
+                    }
+                }
+            }
+            return $rs;               
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer une couche."];
+
+    }
+
+    /**
+     * récupère le scope à partir du titre
+     * 
+     * @param   string   $titre
+     *
+     * @return o:Item
+     */
+    function getScope($titre){
+
+        //vérifie si le scope existe
+        $query['property'][0]['property']= $this->getProp('dcterms:title')->id();
+        $query['property'][0]['type']='eq';
+        $query['property'][0]['text']=$titre; 
+        $query['resource_class_id']=$this->getRc('genstory:histoire')->id();
+        $result = $this->api->search('items',$query)->getContent();
+        if(!$result){
+            $oItem = [];
+            $oItem['o:resource_class'] = ['o:id' => $this->getRc('genstory:histoire')->id()];
+            $this->setValeur(date(DATE_ATOM),$this->getProp("dcterms:created"),$oItem);
+            $this->setValeur($titre,$this->getProp("dcterms:title"),$oItem);
+            $item = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+        }else $item = $result[0];
+        return $item;
+    }
+
+
+    /**
+     * récupère le resource template pour avoir la définition des suggestions
+     * 
+     * @param   string   $label
+     * @param   string   $urlApi
+     *
+     * @return array
+     */
+    function getRtSuggestion($label, $urlApi){
+
+        $props=[];
+        $rt = $this->api->read('resource_templates', ['label' => $label])->getContent();
+        $rtp = $rt->resourceTemplateProperties();
+        foreach ($rtp as $p) {
+            $ac = $p->alternateComment();
+            if(substr($ac,0,10)=="suggestion"){
+                $class = $this->api->search('resource_classes', ['term' => substr($ac,11)])->getContent()[0];
+                $url = $urlApi
+                    .'/items?resource_class_id='.$class->id()
+                    .'&property[0][property]=1&property[0][type]=in&property[0][text]=%QUERY&sort_by=title'
+                ;
+                $props[]=['p'=>$p->property(),'url'=>$url,'c'=>$class];
+            }
+            $dt = $p->dataTypes();
+            if($dt && substr($dt[0],0,11)=="customvocab"){
+                $cv = $this->api->read('custom_vocabs', substr($dt[0],12))->getContent();
+                $url = $urlApi
+                    .'/items?item_set_id='.$cv->itemSet()->id()
+                    .'&property[0][property]=1&property[0][type]=in&property[0][text]=%QUERY&sort_by=title'
+                ;
+                $props[]=['p'=>$p->property(),'url'=>$url];
+            }
+        }
+        return $props;
     }
 
     /**
@@ -155,21 +303,48 @@ class ScenarioViewHelper extends AbstractHelper
             throw new RuntimeException("Le dossier '".$this->tmpPath."' n'est pas accessible en écriture.");			
         }        
         $result = $this->createScenario($this->genScenario($query,$post));
+        $medias  = $result->media();
+        foreach ($medias as $m) {
+            switch ($m->displayTitle()) {
+                case 'json file for timeliner':
+                    $jsonUrl = $m->originalUrl();
+                    break;                
+            }
+        }
+
         return [
             "o:id"=>$result->id(),
             "o:title"=>$result->displayTitle(),
-            'json'=>$result->primaryMedia()->originalUrl()
+            'json'=>$jsonUrl,
         ];
 
     }
-
 
     /**
      * supression d'un track
      * 
      * @param   array   $post
      *
-     * @return o:item
+     * @return array
+     */
+    function deleteLayer($post){
+        $rs = $this->acl->userIsAllowed(null,'delete');
+        if($rs){
+            //supprime toutes les tracks de la couche
+            foreach ($post['ids'] as $id) {
+                $this->api->delete('items', $id);
+            }
+            return ['message'=>"Couche(s) supprimée(s)."];               
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de supprimer."];
+
+    }
+
+    /**
+     * supression d'un track
+     * 
+     * @param   array   $post
+     *
+     * @return array
      */
     function deleteTrack($post){
         $rs = $this->acl->userIsAllowed(null,'delete');
@@ -178,7 +353,9 @@ class ScenarioViewHelper extends AbstractHelper
             return ['message'=>"Track supprimé."];               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de supprimer."];
 
-    }    /**
+    }
+    
+    /**
      * creation d'un track
      * 
      * @param   array   $post
@@ -188,20 +365,28 @@ class ScenarioViewHelper extends AbstractHelper
     function createTrack($post){
         $rs = $this->acl->userIsAllowed(null,'create');
         if($rs){
-            $i = $this->saveTrack($post,$post['rt']);
-            $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
-            $result[] = [
-                "time"=>$post["oa:end"],
-                "value"=> 1,
-            ];
-            //ajoute la track au scenario
-            $data = [];
-            $this->setValeur([['id'=>$i->id()]],$this->getProp('oa:hasBody'),$data); 
-            $this->api->update('items', $post['idScenario'], $data, [], ['isPartial'=>1,'collectionAction' => 'append']);
-            return $result;               
+            $i = $this->saveTrack($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
+            return $this->getTimelinerTrack($post, $i);               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer."];
 
     }
+    /**
+     * met en forme un track
+     * 
+     * @param   o:Item   $i
+     *
+     * @return array
+     */
+    function getTimelinerTrack($post, $i){
+        $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
+        $result[] = [
+            "time"=> (float)$post["oa:end"],
+            "value"=> 1,
+            "idObj"=>isset($post["idObj"]) ? $post["idObj"] : $i->id()
+        ];
+        return $result;               
+    }
+
     /**
      * ajout d'une catégorie pour les layer
      * 
@@ -695,6 +880,7 @@ class ScenarioViewHelper extends AbstractHelper
             "category"=>$category,
             "prop"=> $prop,
             "text"=> $i->displayTitle(),
+            "ordre"=> $i->value('genstory:ordre') ? $i->value('genstory:ordre')->__toString() : 1,
             "tween"=> "linear",
         ];
         //ajoute la catégorie
@@ -779,7 +965,7 @@ class ScenarioViewHelper extends AbstractHelper
                 $pIRB = $oP;
                 $IRB = $data['scenario']['isReferencedBy'] ? $data['scenario']['isReferencedBy'] 
                     : $data['type']."-";
-                $IRB .= $data['facettes'] ? implode('_',$data['facettes']['oa:hasSource']) : ' - ';
+                //$IRB .= $data['facettes'] ? implode('_',$data['facettes']['oa:hasSource']) : ' - ';
                 $this->setValeur($IRB,$oP,$oItem); 
                 break;
             /*trop gourmand en ressource
@@ -817,6 +1003,13 @@ class ScenarioViewHelper extends AbstractHelper
         //vérifie la mise à jour
         if($data['scenario']['idScenario']){
             $oItem['dcterms:created'][0]['@value']=$data['scenario']['dateCreation'];
+            //ajoute les médias existant sauf : 'json file for timeliner'
+            $medias  = $this->api->read('items',$data['scenario']['idScenario'])->getContent()->media();
+            foreach ($medias as $m) {
+                if($m->displayTitle()!='json file for timeliner'){
+                    $oItem['o:media'][]=json_decode(json_encode($m), true);
+                }
+            }
             $this->api->update('items', $data['scenario']['idScenario'], $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
             $result = $this->api->read('items',$data['scenario']['idScenario'])->getContent();
         }else{
@@ -858,7 +1051,7 @@ class ScenarioViewHelper extends AbstractHelper
             'ingest_url' => $url,
             $property->term() => [
                 [
-                    '@value' => 'json file',
+                    '@value' => 'json file for timeliner',
                     'property_id' => $property->id(),
                     'type' => 'literal',
                 ],
@@ -1027,13 +1220,13 @@ class ScenarioViewHelper extends AbstractHelper
         foreach($data as $item) {
             //construction de la clef
             $source = $item->value('oa:hasSource')->valueResource();
-            $scope = $item->value('oa:hasScope')->valueResource();
+            $scopeId = $item->value('oa:hasScope') ? $item->value('oa:hasScope')->valueResource()->id() : 0;
             $rc = $source->resourceClass();
 
             $color = "";
             $desc = "";
             $val = $rc->label().' : '.$source->displayTitle();
-            $id = 'groupByScopeSourceClass:'.$scope->id().':'.$rc->id().':'.$source->id();
+            $id = 'groupByScopeSourceClass:'.$scopeId.':'.$rc->id().':'.$source->id();
             $color = $this->aleaColor();
             $desc = '';
             if(!array_key_exists($val, $result))$result[$val]=['items'=>[],'id'=> $id,'source'=> $source,'class'=> $rc,'color'=> $color,'desc'=> $desc];

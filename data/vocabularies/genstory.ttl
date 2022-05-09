@@ -99,3 +99,23 @@ genstory:hasParam a rdf:Property ;
     rdfs:label "a comme paramètres" ;
     rdfs:domain o:Resource ;
     vs:term_status "experimental" .
+
+genstory:hasConditionInitial a rdf:Property ;
+    rdfs:label "a comme condition initiale" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
+
+genstory:ordre a rdf:Property ;
+    rdfs:label "Ordre" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
+
+genstory:hasEvenementAfterValid a rdf:Property ;
+    rdfs:label "a comme événement après validation" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
+
+genstory:hasEvenementAfterEchec a rdf:Property ;
+    rdfs:label "a comme événement après échec" ;
+    rdfs:domain o:Resource ;
+    vs:term_status "experimental" .
