@@ -661,7 +661,7 @@ class ScenarioViewHelper extends AbstractHelper
     function genScenario($query, $post=false){
         $gen = $query['gen'];
         $inScheme = isset($query['inScheme']) ? $query['inScheme'] : 'no';
-        $titre = $post['dcterms:title'] ? $post['dcterms:title'] : "new scenario";
+        $titre = isset($post['dcterms:title']) ? $post['dcterms:title'] : "new scenario";
         $rt = 'Scenario';
         $IRB = "";
         $dateCreation=date(DATE_ATOM);
@@ -798,11 +798,13 @@ class ScenarioViewHelper extends AbstractHelper
                         $doublons[$p]=[];
                         $facettes[$p]=[];
                     }
-                    foreach ($e[$p] as $v) {
-                        if(is_object($v) && !isset($doublons[$p][$v->id()])){
-                            $facettes[$p][]=$v->id();
-                            $doublons[$p][$v->id()]=1;
-                        }
+                    if(isset($e[$p])){
+                        foreach ($e[$p] as $v) {
+                            if(is_object($v) && !isset($doublons[$p][$v->id()])){
+                                $facettes[$p][]=$v->id();
+                                $doublons[$p][$v->id()]=1;
+                            }
+                        }    
                     }
                 } 
             }
