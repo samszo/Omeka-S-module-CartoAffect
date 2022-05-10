@@ -28,8 +28,10 @@ class ScenarioViewHelper extends AbstractHelper
       $this->config = $config;
         $this->tempPath = OMEKA_PATH.'/files/tmp';
         $this->tempUrl = $_SERVER['HTTPS'] ? 'https' :'http';
-        $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
+        //$this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
+        $this->tempUrl .='https://genstory.jardindesconnaissances.fr/files/tmp';
+
     }
 
     /**
