@@ -946,7 +946,7 @@ class ScenarioViewHelper extends AbstractHelper
      * @return json
      */
     function createScenario($data){
-        set_time_limit(300);
+        //set_time_limit(300);
         $rt =  $this->api->search('resource_templates', ['label' => $data['rt'],])->getContent()[0];
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
