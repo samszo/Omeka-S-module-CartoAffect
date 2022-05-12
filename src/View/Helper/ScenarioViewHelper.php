@@ -27,10 +27,10 @@ class ScenarioViewHelper extends AbstractHelper
       $this->acl = $acl;
       $this->config = $config;
         $this->tempPath = OMEKA_PATH.'/files/tmp';
-        //$this->tempUrl = $_SERVER['HTTPS'] ? 'https' :'http';
-        //$this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
+        $this->tempUrl = $_SERVER['HTTPS'] ? 'https' :'http';
+        $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
-        $this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
+        //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
 
     }
 
@@ -659,7 +659,7 @@ class ScenarioViewHelper extends AbstractHelper
      * @return array
      */
     function genScenario($query, $post=false){
-        $gen = $query['gen'];
+        $gen = isset($query['gen']) ? $query['gen'] : "";
         $inScheme = isset($query['inScheme']) ? $query['inScheme'] : 'no';
         $titre = isset($post['dcterms:title']) ? $post['dcterms:title'] : "new scenario";
         $rt = 'Scenario';
@@ -990,6 +990,7 @@ class ScenarioViewHelper extends AbstractHelper
             case "oa:hasSource":
             */
             case "dcterms:creator":
+                if(isset($data['facettes']) && isset($data['facettes'][$oP->term()]))
                 foreach ($data['facettes'][$oP->term()] as $s) {
                     $this->setValeur([['id'=>$s]],$oP,$oItem); 
                 }
