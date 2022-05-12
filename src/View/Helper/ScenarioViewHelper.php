@@ -23,6 +23,7 @@ class ScenarioViewHelper extends AbstractHelper
 
     public function __construct($api,$acl,$config)
     {
+        error_reporting(E_ERROR | E_WARNING | E_PARSE);
       $this->api = $api;
       $this->acl = $acl;
       $this->config = $config;
@@ -111,64 +112,66 @@ class ScenarioViewHelper extends AbstractHelper
             $s = $this->api->read('items', $idScenario)->getContent();
             //boucle sur les relations
             foreach ($post['layers'] as $k => $vals) {
-                foreach($vals['rela'] as $v){
-                    if(is_string($v)){
-                        //creation de la catégorie
-                        $oItem = [];
-                        $oItem['o:resource_class'] = ['o:id' => $this->getRc($vals['c'])->id()];
-                        $this->setValeur(date(DATE_ATOM),$this->getProp("dcterms:created"),$oItem);
-                        $this->setValeur($v,$this->getProp("dcterms:title"),$oItem);
-                        $cat = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
-                    }else $cat = $this->api->read('items', $v['id'])->getContent();
-                    //vérifie si une track existe avec pour source cette catégorie et ce scénario
-                    $query['property'][0]['property']= $this->getProp('genstory:hasScenario')->id();
-                    $query['property'][0]['type']='res';
-                    $query['property'][0]['text']=$idScenario; 
-                    $query['property'][1]['property']= $this->getProp('oa:hasSource')->id();
-                    $query['property'][1]['type']='res';
-                    $query['property'][1]['text']=$cat->id(); 
-                    $result = $this->api->search('items',$query)->getContent();
-                    if($result){
-                        $rs[]=[
-                        'message'=>'la couche "'.$cat->displayTitle().'" ('.$cat->id().') existe déjà dans ce scénario'
-                        ];
-                    }else{
-                        $inScheme = $s->value('skos:inScheme') ? $s->value('skos:inScheme')->__toString() : '';
-                        $rc = $cat->resourceClass();
-                        switch ($inScheme) {
-                            case "groupByScopeSourceClass":
-                                $idScope = isset($post['track']['idScope']) ? $post['track']['idScope'] : $this->getScope($post['track']['scope'])->id(); 
-                                $post['track']['oa:hasScope']=$idScope;
-                                $post['track']['idGroup']='groupByScopeSourceClass:'.$idScope.':'.$rc->id().':'.$cat->id();
-                                $post['track']['category']=$rc->label().' : '.$cat->displayTitle();
-                                break;
-                            case "groupBySourceClassTarget":
-                                $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
-                                $post['track']['category']=$rc->label().' : no';
-                                break;
-                            case "groupBySourceClassBody":
-                                $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
-                                $post['track']['category']=$rc->label().' : no';
-                                break;                            
-                            case "groupByCategoryCreator":
-                            default:
-                                $crea = $this->api->read('items', $post['track']['dcterms:creator'])->getContent();
-                                $post['track']['idGroup']=$cat->id().'_'.$crea->id();
-                                $post['track']['category']=$cat->displayTitle().' : '.$crea->displayTitle();
-                                break;
-                        }        
-                        //création de la couche                        
-                        $post['track']['dcterms:title']=$this->getRc($vals['c'])->label().' : '.$cat->displayTitle();
-                        $post['track']['oa:start']=0;
-                        $post['track']['oa:end']=5;
-                        $post['track']['schema:color']=$this->aleaColor();
-                        $post['track']['oa:hasSource']=$cat->id();
-                        $post['track'][$k]=$cat->id();
-                        $rs[]=[
-                            'message'=>'La couche '.$cat->displayTitle().' ('.$cat->id().') est crée dans ce scénario'
-                            ,'track'=>$this->createTrack($post['track'])
-                            ,'cat'=>$cat
-                        ];
+                if(isset($vals['rela'])){
+                    foreach($vals['rela'] as $v){
+                        if(is_string($v)){
+                            //creation de la catégorie
+                            $oItem = [];
+                            $oItem['o:resource_class'] = ['o:id' => $this->getRc($vals['c'])->id()];
+                            $this->setValeur(date(DATE_ATOM),$this->getProp("dcterms:created"),$oItem);
+                            $this->setValeur($v,$this->getProp("dcterms:title"),$oItem);
+                            $cat = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+                        }else $cat = $this->api->read('items', $v['id'])->getContent();
+                        //vérifie si une track existe avec pour source cette catégorie et ce scénario
+                        $query['property'][0]['property']= $this->getProp('genstory:hasScenario')->id();
+                        $query['property'][0]['type']='res';
+                        $query['property'][0]['text']=$idScenario; 
+                        $query['property'][1]['property']= $this->getProp('oa:hasSource')->id();
+                        $query['property'][1]['type']='res';
+                        $query['property'][1]['text']=$cat->id(); 
+                        $result = $this->api->search('items',$query)->getContent();
+                        if($result){
+                            $rs[]=[
+                            'message'=>'la couche "'.$cat->displayTitle().'" ('.$cat->id().') existe déjà dans ce scénario'
+                            ];
+                        }else{
+                            $inScheme = $s->value('skos:inScheme') ? $s->value('skos:inScheme')->__toString() : '';
+                            $rc = $cat->resourceClass();
+                            switch ($inScheme) {
+                                case "groupByScopeSourceClass":
+                                    $idScope = isset($post['track']['idScope']) ? $post['track']['idScope'] : $this->getScope($post['track']['scope'])->id(); 
+                                    $post['track']['oa:hasScope']=$idScope;
+                                    $post['track']['idGroup']='groupByScopeSourceClass:'.$idScope.':'.$rc->id().':'.$cat->id();
+                                    $post['track']['category']=$rc->label().' : '.$cat->displayTitle();
+                                    break;
+                                case "groupBySourceClassTarget":
+                                    $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
+                                    $post['track']['category']=$rc->label().' : no';
+                                    break;
+                                case "groupBySourceClassBody":
+                                    $post['track']['idGroup']=$cat->id().' : '.$rc->id().' : 0';
+                                    $post['track']['category']=$rc->label().' : no';
+                                    break;                            
+                                case "groupByCategoryCreator":
+                                default:
+                                    $crea = $this->api->read('items', $post['track']['dcterms:creator'])->getContent();
+                                    $post['track']['idGroup']=$cat->id().'_'.$crea->id();
+                                    $post['track']['category']=$cat->displayTitle().' : '.$crea->displayTitle();
+                                    break;
+                            }        
+                            //création de la couche                        
+                            $post['track']['dcterms:title']=$this->getRc($vals['c'])->label().' : '.$cat->displayTitle();
+                            $post['track']['oa:start']=0;
+                            $post['track']['oa:end']=5;
+                            $post['track']['schema:color']=$this->aleaColor();
+                            $post['track']['oa:hasSource']=$cat->id();
+                            $post['track'][$k]=$cat->id();
+                            $rs[]=[
+                                'message'=>'La couche '.$cat->displayTitle().' ('.$cat->id().') est crée dans ce scénario'
+                                ,'track'=>$this->createTrack($post['track'])
+                                ,'cat'=>$cat
+                            ];
+                        }
                     }
                 }
             }
