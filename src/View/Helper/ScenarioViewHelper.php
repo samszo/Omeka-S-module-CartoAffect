@@ -23,13 +23,13 @@ class ScenarioViewHelper extends AbstractHelper
 
     public function __construct($api,$acl,$config)
     {
-        error_reporting(E_ERROR | E_WARNING | E_PARSE);
+      error_reporting(E_ERROR | E_WARNING | E_PARSE);
       $this->api = $api;
       $this->acl = $acl;
       $this->config = $config;
         $this->tempPath = OMEKA_PATH.'/files/tmp';
-        $this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' :'http';
-        $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
+        //$this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' :'http';
+        //$this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
         $this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
         //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
