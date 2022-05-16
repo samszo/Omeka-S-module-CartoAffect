@@ -30,7 +30,7 @@
             "o:is_private": false,
             "data_types": [],
             "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
-            "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+            "vocabulary_label": "GenStory",
             "local_name": "hasHistoire",
             "label": "a comme histoire"
         },
@@ -147,7 +147,7 @@
     ],
     "o:resource_class": {
         "vocabulary_namespace_uri": "https:\/\/jardindesconnaissances.univ-paris8.fr\/onto\/genstory#",
-        "vocabulary_label": "G\u00e9n\u00e9rateur d'histoire",
+        "vocabulary_label": "GenStory",
         "local_name": "scenario",
         "label": "Scenario"
     }
