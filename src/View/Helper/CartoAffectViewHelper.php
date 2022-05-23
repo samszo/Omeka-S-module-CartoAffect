@@ -25,6 +25,11 @@ class CartoAffectViewHelper extends AbstractHelper
     public function __invoke($data)
     {
 
+      if(isset($data['logout'])){
+        $this->auth->clearIdentity();
+        return true;
+      }
+
       if(isset($data['getActantAnonyme'])){
         $actant = $this->getActantAnonyme();       
         $this->auth->clearIdentity();

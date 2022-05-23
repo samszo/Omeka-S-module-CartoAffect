@@ -597,7 +597,6 @@ class ScenarioViewHelper extends AbstractHelper
         }              
         return $result;        
     }
-
     /**
      * Renvoie les indexations pour un scenario
      * 
