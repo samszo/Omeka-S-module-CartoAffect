@@ -781,8 +781,8 @@ class ScenarioViewHelper extends AbstractHelper
             $layer = [
                 "id"=>$groupe['id'],
                 "idLayer"=>$idLayer,
-                "class"=>$groupe['class'] ? $groupe['class'] : 'item',
-                "source"=>$groupe['source'] ? $groupe['source'] : 'item',
+                "class"=>isset($groupe['class']) ? $groupe['class'] : 'item',
+                "source"=>isset($groupe['source']) ? $groupe['source'] : 'item',
                 "name"=>$k,
                 "_color"=> $groupe['color'],
                 "_value"=> 0,
