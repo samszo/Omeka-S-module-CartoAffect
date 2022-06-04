@@ -4,3 +4,5 @@
 data/items/.~lock.cribles.csv#
 data/items/.~lock.items-6550-20210331-094036.csv#
 data/tmp/6246c36797f6b.json
+config/code_secret_client.json
+vendor/

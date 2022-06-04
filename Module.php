@@ -18,6 +18,7 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\ModuleManager\ModuleManager;
 use Generic\AbstractModule;
 
 
@@ -56,7 +57,6 @@ class Module extends AbstractModule
     {
         return include __DIR__ . '/config/module.config.php';
     }
-    
 
     protected function preInstall():void
     {

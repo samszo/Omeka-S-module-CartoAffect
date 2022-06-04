@@ -21,16 +21,17 @@ class ScenarioViewHelper extends AbstractHelper
     protected $tempPath;
     protected $tempUrl;
 
-    public function __construct($api,$acl,$config)
+    public function __construct($arrS)
     {
       error_reporting(E_ERROR | E_WARNING | E_PARSE);
-      $this->api = $api;
-      $this->acl = $acl;
-      $this->config = $config;
-        $this->tempPath = OMEKA_PATH.'/files/tmp';
-        //$this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' :'http';
-        //$this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
-        $this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
+
+      $this->api = $arrS['api'];
+      $this->acl = $arrS['acl'];
+      $this->config = $arrS['config'];
+        $this->tempPath = $arrS['basePath'].'/tmp';
+        $this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' :'http';
+        $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
+        //$this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
         //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
 
@@ -89,6 +90,9 @@ class ScenarioViewHelper extends AbstractHelper
                 break;
             case 'getRtSuggestion':
                 $result = $this->getRtSuggestion($query['label'],$query['urlApi']);
+                break;
+            case 'getTimelinerTrack':
+                $result = $this->getTimelinerTrack($query,null);
                 break;
             default:
                 $result = [];
@@ -372,18 +376,20 @@ class ScenarioViewHelper extends AbstractHelper
         $rs = $this->acl->userIsAllowed(null,'create');
         if($rs){
             $i = $this->saveTrack($post,isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
-            return $this->getTimelinerTrack($post, $i);               
+            return isset($post['getItem']) ? $i : $this->getTimelinerTrack($post, $i);               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer."];
 
     }
     /**
      * met en forme un track
      * 
-     * @param   o:Item   $i
+     * @param   array       $post
+     * @param   o:Item      $i
      *
      * @return array
      */
     function getTimelinerTrack($post, $i){
+        if(!$i)$i = $this->api->read('items', $post['oItem']->id())->getContent();
         $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
         $result[] = [
             "time"=> (float)$post["oa:end"],
@@ -405,34 +411,45 @@ class ScenarioViewHelper extends AbstractHelper
         if($rs){
             //enregistre une indexation dans la base
             $rt =  $this->getRt($params['rt']);
-            $oItem = [];
-            $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
-            $oItem['o:resource_template'] = ['o:id' => $rt->id()];
-            $rtp = $rt->resourceTemplateProperties();
-            foreach ($rtp as $p) {
-                $oP = $p->property();
-                switch ($oP->term()) {
-                case "dcterms:created":
-                case "dcterms:modified":
-                    $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
-                    break;                                                            
-                default:
-                    if(isset($params[$oP->term()])){
-                        $this->setValeur($params[$oP->term()],$oP,$oItem); 
+            //vérifie l'existence de la catégorie
+            $query['property'][0]['property']= $this->getProp('dcterms:title')->id();
+            $query['property'][0]['type']='eq';
+            $query['property'][0]['text']=$params['dcterms:title']; 
+            $query['o:resource_class_id']=$rt->resourceClass()->id(); 
+            $query['o:resource_template_id']=$rt->id();                         
+            $result = $this->api->search('items',$query)->getContent();
+            if(count($result)){
+                return $result[0];
+            } else {
+                $oItem = [];
+                $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
+                $oItem['o:resource_template'] = ['o:id' => $rt->id()];
+                $rtp = $rt->resourceTemplateProperties();
+                foreach ($rtp as $p) {
+                    $oP = $p->property();
+                    switch ($oP->term()) {
+                    case "dcterms:created":
+                    case "dcterms:modified":
+                        $this->setValeur(date(DATE_ATOM),$oP,$oItem); 
+                        break;                                                            
+                    default:
+                        if(isset($params[$oP->term()])){
+                            $this->setValeur($params[$oP->term()],$oP,$oItem); 
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-            //vérifie la mise à jour
-            if(isset($params['id'])){
-                //$oItem
-                $result = $this->api->read('items', $params['id'])->getContent();
-                //conserve la date de création
-                $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
-                $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
-                $result = $this->api->read('items',$result->id())->getContent();
-            }else{
-                $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+                //vérifie la mise à jour
+                if(isset($params['id'])){
+                    //$oItem
+                    $result = $this->api->read('items', $params['id'])->getContent();
+                    //conserve la date de création
+                    $oItem['dcterms:created'][0]['@value']=$result->value('dcterms:created')->__toString();
+                    $this->api->update('items', $result->id(), $oItem, [], ['isPartial'=>1,'continueOnError' => true, 'collectionAction' => 'replace']);
+                    $result = $this->api->read('items',$result->id())->getContent();
+                }else{
+                    $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+                }
             }              
             return $result;               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer une catégorie."];

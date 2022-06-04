@@ -12,6 +12,7 @@ return [
             'QuerySqlViewHelper' => View\Helper\QuerySqlViewHelper::class,
             'DiagrammeViewHelper' => View\Helper\DiagrammeViewHelper::class,
             'ScenarioViewHelper' => View\Helper\ScenarioViewHelper::class,
+            'GoogleViewHelper' => View\Helper\GoogleViewHelper::class,
         ],
                 
         'factories'  => [
@@ -21,6 +22,7 @@ return [
             'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
             'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
             'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
+            'GoogleFactory' => Service\ViewHelper\GoogleFactory::class
         ],
 
     ],
