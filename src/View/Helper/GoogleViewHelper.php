@@ -69,36 +69,40 @@ class GoogleViewHelper extends AbstractHelper
         $rs = $this->acl->userIsAllowed(null,'create');
         if($rs){
             $result = [];
-            $item = $params['frag'];
-            $media = $item->primaryMedia();
-            $audioResource = file_get_contents($media->originalUrl());
+            $item = $params['frag']; 
+            $medias = $item->media();
+            foreach ($medias as $media) {
+                if($media->mediaType()=="audio/flac"){
+                    $audioResource = file_get_contents($media->originalUrl());
 
-            $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            
-            //$encoding = AudioEncoding::OGG_OPUS;
-            //$sampleRateHertz = 24000;
-            //$sampleRateHertz = 44100;
-            $encoding = AudioEncoding::FLAC;
-            $languageCode = 'fr-FR';
-        
-            $audio = (new RecognitionAudio())
-                ->setContent($audioResource);
-            $config = (new RecognitionConfig())
-                ->setEncoding($encoding)
-                ->setEnableWordTimeOffsets(true)
-                ->setEnableWordConfidence(true)
-                /*différent suivant le media d'où vient le fragment
-                ->setAudioChannelCount(2)
-                ->setSampleRateHertz($sampleRateHertz)
-                ->setDiarizationConfig(
-                    new SpeakerDiarizationConfig(['enable_speaker_diarization'=>true,'min_speaker_count'=>1,'max_speaker_count'=>10])
-                    )
-                */
-                ->setLanguageCode($languageCode);
+                    $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            
+                    //$encoding = AudioEncoding::OGG_OPUS;
+                    //$sampleRateHertz = 24000;
+                    //$sampleRateHertz = 44100;
+                    $encoding = AudioEncoding::FLAC;
+                    $languageCode = 'fr-FR';
                 
-            $response = $speechClient->recognize($config, $audio);
-            foreach ($response->getResults() as $r) {
-                //ajoute la transcription
-                $result[]=$this->addTranscription($r->getAlternatives()[0], $item);
+                    $audio = (new RecognitionAudio())
+                        ->setContent($audioResource);
+                    $config = (new RecognitionConfig())
+                        ->setEncoding($encoding)
+                        ->setEnableWordTimeOffsets(true)
+                        ->setEnableWordConfidence(true)
+                        /*différent suivant le media d'où vient le fragment
+                        ->setAudioChannelCount(2)
+                        ->setSampleRateHertz($sampleRateHertz)
+                        ->setDiarizationConfig(
+                            new SpeakerDiarizationConfig(['enable_speaker_diarization'=>true,'min_speaker_count'=>1,'max_speaker_count'=>10])
+                            )
+                        */
+                        ->setLanguageCode($languageCode);
+                        
+                    $response = $speechClient->recognize($config, $audio);
+                    foreach ($response->getResults() as $r) {
+                        //ajoute la transcription
+                        $result[]=$this->addTranscription($r->getAlternatives()[0], $item);
+                    }
+                }
             }            
             $speechClient->close();            
             return $result;               
@@ -152,10 +156,12 @@ class GoogleViewHelper extends AbstractHelper
         }
         //modifie la source
         $dataUpdate = json_decode(json_encode($item), true);
+        /*
         $dataUpdate['dcterms:title'][0]=[
             'property_id' => $this->getProp('dcterms:title')->id()
             ,'@value' => $alt->getTranscript() ,'type' => 'literal'
         ];
+        */
         foreach ($oItem['jdc:hasConcept'] as $c) {
             $dataUpdate['jdc:hasConcept'][]=$c;        
         }
