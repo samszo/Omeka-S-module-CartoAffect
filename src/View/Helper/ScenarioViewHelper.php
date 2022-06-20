@@ -94,6 +94,9 @@ class ScenarioViewHelper extends AbstractHelper
             case 'getTimelinerTrack':
                 $result = $this->getTimelinerTrack($query,null);
                 break;
+            case 'showChoix':
+                $result = $this->showChoix($post);
+                break;
             default:
                 $result = [];
                 break;
@@ -101,6 +104,39 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
+
+    /**
+     * récupère les choix
+     * 
+     * @param   array   $post
+     *
+     * @return array
+     */
+    function showChoix($post){
+        $query['resource_class_id']=$this->getRc('oa:Choice')->id();
+
+        foreach ($post['qs'] as $q) {
+            switch ($q['group']) {
+                case "skos:Concept":
+                    $p = 'jdc:hasConcept';
+                    break;
+                default:
+                    $p = $q['group'];
+                    break;
+            }
+            $query['property'][0]['property']= $this->getProp($p)->id();
+            $query['property'][0]['type']='res';
+            $query['property'][0]['text']=$q['id']; 
+        }
+        $results = $this->api->search('items',$query)->getContent();
+        $rs = [];
+        foreach ($results as $r) {
+            $rs[] = $this->createTimelinerEntry(false, false, $r);
+        }
+        return $rs;
+
+    }
+        
 
     /**
      * ajoute des couches au scénario
