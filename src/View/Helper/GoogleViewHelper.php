@@ -22,12 +22,14 @@ class GoogleViewHelper extends AbstractHelper
     protected $rcs;
     protected $rts;
 
-    public function __construct($api,$acl,$config)
+    public function __construct($api,$acl,$config,$logger)
     {
       $this->api = $api;
       $this->acl = $acl;
       $this->config = $config;
       $this->credentials = json_decode(file_get_contents(OMEKA_PATH . '/modules/CartoAffect/config/code_secret_client.json'), true);
+      $this->logger = $logger;
+
       require_once OMEKA_PATH . '/modules/CartoAffect/vendor/autoload.php';
 
     }
@@ -73,6 +75,8 @@ class GoogleViewHelper extends AbstractHelper
             $medias = $item->media();
             foreach ($medias as $media) {
                 if($media->mediaType()=="audio/flac"){
+                    $this->logger->info("speachToText : originalUrl = ".$media->originalUrl());
+
                     $audioResource = file_get_contents($media->originalUrl());
 
                     $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            

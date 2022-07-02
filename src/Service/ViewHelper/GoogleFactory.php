@@ -12,6 +12,8 @@ class GoogleFactory implements FactoryInterface
         $api = $services->get('Omeka\ApiManager');
         $acl = $services->get('Omeka\Acl');
         $config = $services->get('Config');
-        return new GoogleViewHelper($api, $acl, $config);
+        $logger = $services->get('Omeka\Logger');
+
+        return new GoogleViewHelper($api, $acl, $config,$logger);
     }
 }
