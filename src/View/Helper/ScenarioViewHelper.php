@@ -33,6 +33,7 @@ class ScenarioViewHelper extends AbstractHelper
         $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
         //$this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
+        $this->tempUrl ='http://192.168.30.208/arcanes/omk/files/tmp';
         //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
 
     }
@@ -97,6 +98,9 @@ class ScenarioViewHelper extends AbstractHelper
             case 'showChoix':
                 $result = $this->showChoix($post);
                 break;
+            case 'getWebVTT':
+                $result = $this->getWebVTT($query['numPos'],$query['idSrc']);
+                break;                
             default:
                 $result = [];
                 break;
@@ -136,7 +140,51 @@ class ScenarioViewHelper extends AbstractHelper
         return $rs;
 
     }
-        
+
+    /**
+     * création des sous-titre
+     * 
+     * @param   int   $numPos
+     * @param   int   $idSrc
+     *
+     * @return array
+     */
+    function getWebVTT($numPos, $idSrc){
+        //récupère la source de l'annotation pour accentuer les mots clefs
+        //$src = $this->api->read('items',$idSrc)->getContent();
+        //récupère les parties du discours
+        $query['resource_class_id']=$this->getRc('lexinfo:PartOfSpeech')->id();
+        $query['property'][0]['property']= $this->getProp('oa:hasSource')->id();
+        $query['property'][0]['type']='res';
+        $query['property'][0]['text']=$idSrc; 
+        $results = $this->api->search('items',$query)->getContent();
+        $pos = $results[$numPos];
+        $vtt = "WEBVTT\n\n";//.PHP_EOL.PHP_EOL;
+        $starts = $pos->value('oa:start',['all'=>true]);                                                
+        $ends = $pos->value('oa:end',['all'=>true]);
+        $cpt = $pos->value('jdc:hasConcept',['all'=>true]);
+        $nb = count($cpt);
+        for ($i=0; $i < $nb; $i++) { 
+            $vtt .= $this->formatWebVTTtimestamp($starts[$i]->__toString())
+                ." --> ".$this->formatWebVTTtimestamp($ends[$i]->__toString())."\n";
+            $vtt .= $cpt[$i]->valueResource()->displayTitle()."\n\n";
+        }
+        return $vtt;
+    }
+
+    /**
+     * format les timestamp de google pour un fichier WebVTT
+     * 
+     * @param   string  $ts
+     *
+     * @return string  
+     */
+    function formatWebVTTtimestamp($ts){        
+        $arr = explode(':',$ts);        
+        if(count($arr)==2)return "00:".str_pad($arr[0], 2, "0", STR_PAD_LEFT).".".str_pad(substr($arr[1],0,3), 3, "0", STR_PAD_LEFT);
+        else return str_pad($arr[0], 2, "0", STR_PAD_LEFT).":".str_pad($arr[1], 2, "0", STR_PAD_LEFT).".".str_pad(substr($arr[1],0,3), 3, "0", STR_PAD_LEFT);
+    }
+
 
     /**
      * ajoute des couches au scénario
@@ -950,6 +998,11 @@ class ScenarioViewHelper extends AbstractHelper
         //ajoute les infos des ressources
         foreach ($this->propsValueRessource as $p) {
             $this->addRessourceInfos($p,$i,$l);
+        }
+        //ajoute les médias
+        $medias = $i->media();
+        if($medias){
+            $l["medias"]=$medias;
         }
         return $l;
     }
