@@ -32,9 +32,9 @@ class ScenarioViewHelper extends AbstractHelper
         $this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' :'http';
         $this->tempUrl .='://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'].'/files/tmp';
         //$this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
+        //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
         $this->tempUrl ='http://192.168.30.208/arcanes/omk/files/tmp';
-        //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
 
     }
 
