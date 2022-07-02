@@ -88,6 +88,8 @@ class GoogleViewHelper extends AbstractHelper
                 
                     $audio = (new RecognitionAudio())
                         ->setContent($audioResource);
+                    $this->logger->info("speachToText : audio, $audio);
+
                     $config = (new RecognitionConfig())
                         ->setEncoding($encoding)
                         ->setEnableWordTimeOffsets(true)
@@ -100,6 +102,7 @@ class GoogleViewHelper extends AbstractHelper
                             )
                         */
                         ->setLanguageCode($languageCode);
+                    $this->logger->info("speachToText : config, $config);
                         
                     $response = $speechClient->recognize($config, $audio);
                     foreach ($response->getResults() as $r) {
