@@ -75,9 +75,11 @@ class GoogleViewHelper extends AbstractHelper
             $medias = $item->media();
             foreach ($medias as $media) {
                 if($media->mediaType()=="audio/flac"){
-                    $this->logger->info("speachToText : originalUrl = ".$media->originalUrl());
+                    //ATTENTION problème de dns sur le serveur paris 8
+                    $oriUrl = str_replace('https://arcanes.univ-paris8.fr','http://192.168.30.208',$media->originalUrl());
+                    $this->logger->info("speachToText : originalUrl = ".$oriUrl);
 
-                    $audioResource = file_get_contents($media->originalUrl());
+                    $audioResource = file_get_contents($oriUrl);
 
                     $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            
                     //$encoding = AudioEncoding::OGG_OPUS;
@@ -88,7 +90,6 @@ class GoogleViewHelper extends AbstractHelper
                 
                     $audio = (new RecognitionAudio())
                         ->setContent($audioResource);
-                    $this->logger->info("speachToText : audio", json_encode($audio));
 
                     $config = (new RecognitionConfig())
                         ->setEncoding($encoding)
@@ -102,7 +103,6 @@ class GoogleViewHelper extends AbstractHelper
                             )
                         */
                         ->setLanguageCode($languageCode);
-                    $this->logger->info("speachToText : config", json_encode($config));
                         
                     $response = $speechClient->recognize($config, $audio);
                     foreach ($response->getResults() as $r) {
