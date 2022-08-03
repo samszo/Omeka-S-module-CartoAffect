@@ -24,6 +24,79 @@ if (!class_exists(\Generic\InstallResources::class)) {
 }
 $installResources = new \Generic\InstallResources($services);
 
+if (version_compare($oldVersion, '0.1.8', '<')) {
+    //ajoute un ressource template
+    $installResources->createResourceTemplate($this->modulePath()."/data/resource-templates/Position_toile.json");
+}
+
+if (version_compare($oldVersion, '0.1.7', '<')) {
+
+    //installation du crible étoile
+    $rc = ['jdc:Crible','skos:Concept'];
+    foreach ($rc as $v) {
+        $rs[$v]=$api->search('resource_classes', ['term' => $v])->getContent()[0];
+    }
+    $rt = ['Crible','Concept dans crible'];
+    foreach ($rt as $v) {
+        $rs[$v] =  $api->search('resource_templates', ['label' => $v])->getContent()[0];
+    }    
+    $props = ['dcterms:title','plmk:hasIcon','skos:inScheme','schema:color','jdc:ordreCrible','jdc:hasCrible'
+        ,'jdc:hasCribleCarto','dcterms:isReferencedBy','dcterms:description','schema:repeatCount'
+        ,'schema:actionApplication','schema:targetCollection'];
+    foreach ($props as $v) {
+        $rs[$v] =  $api->search('properties', ['term' => $v])->getContent()[0];
+    }    
+ 
+    //création des cribles
+    $cribles = [
+        ['dcterms:title'=>'Evaluation étoiles']
+    ];
+    foreach ($cribles as $v) {
+        $oItem = [];
+        $oItem['o:resource_class'] = ['o:id' => $rs['jdc:Crible']->id()];
+        $oItem['o:resource_template'] = ['o:id' => $rs['Crible']->id()];
+        foreach ($v as $p => $d) {
+            $valueObject = [];
+            $valueObject['property_id'] = $rs[$p]->id();
+            $valueObject['@value'] = $d;
+            $valueObject['type'] = 'literal';
+            $oItem[$rs[$p]->term()][] = $valueObject;                   
+        }
+        $result = $api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+        $rs[$v['dcterms:title']]=$result->id();
+    }
+
+    //création des concepts 
+    $concepts = [
+        ['dcterms:title'=>'Etoile','plmk:hasIcon'=>'☆','schema:color'=>'#c13b6c','jdc:ordreCrible'=>'1','skos:inScheme'=>['Evaluation étoiles']]
+    ];
+    foreach ($concepts as $k=> $v) {
+        $oItem = [];
+        $oItem['o:resource_class'] = ['o:id' => $rs['skos:Concept']->id()];
+        $oItem['o:resource_template'] = ['o:id' => $rs['Concept dans crible']->id()];
+        foreach ($v as $p => $d) {
+            if($p=='skos:inScheme'){
+                foreach ($d as $s) {
+                    $valueObject = [];
+                    $valueObject['value_resource_id']=$rs[$s];        
+                    $valueObject['property_id']=$rs[$p]->id();
+                    $valueObject['type']='resource';    
+                    $oItem[$rs[$p]->term()][]=$valueObject;
+                }
+            }else{
+                $valueObject = [];
+                $valueObject['property_id'] = $rs[$p]->id();
+                $valueObject['@value'] = $d;
+                $valueObject['type'] = 'literal';
+                $oItem[$rs[$p]->term()][] = $valueObject;               
+            }
+        }
+        $result = $api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
+    }    
+
+}
+
+
 if (version_compare($oldVersion, '0.1.5', '<')) {
     //ajoute les vocabulaires indispensables
     $rdfImporter = $services->get('Omeka\RdfImporter');
@@ -43,8 +116,6 @@ if (version_compare($oldVersion, '0.1.5', '<')) {
             );
         }    
     }
-
-
 }
 
 if (version_compare($oldVersion, '0.1.4', '<')) {
