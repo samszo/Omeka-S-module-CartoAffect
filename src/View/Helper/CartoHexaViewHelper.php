@@ -43,7 +43,7 @@ class CartoHexaViewHelper extends AbstractHelper
             ,'minVal'=>$params['query']['minVal'] ? $params['query']['minVal'] : 0
             ,'maxVal'=>$params['query']['maxVal'] ? $params['query']['maxVal'] : 0
         ]);
-        $rs=array("o:id"=>1,"o:title"=>"Carte des concepts", "children"=>[]);
+        $rs=array("o:id"=>1,"o:title"=>"Carte des concepts", "o:resource_class"=>"jdc:Concept", "children"=>[]);
         foreach ($data as $d) {
             $rs["children"][]= array("o:id"=>$d['id'],"o:title"=>$d['title'],"value"=>$d['nbValue'], "children"=>[]);
         }
