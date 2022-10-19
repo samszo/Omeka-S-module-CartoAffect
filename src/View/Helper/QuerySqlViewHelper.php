@@ -29,11 +29,78 @@ class QuerySqlViewHelper extends AbstractHelper
                 break;            
             case 'getDistinctPropertyVal':
                 $result = $this->getDistinctPropertyVal($params['idRT'], $params['idP']);
-                break;            
+                break;
+            case 'statValueResourceClass':
+                $result = $this->statValueResourceClass($params);
+                break;
+            case 'cooccurrenceValueResource':
+                $result = $this->cooccurrenceValueResource($params);
+                break;                
         }
 
         return $result;
 
+    }
+
+    /**
+     * renvoie les statistiques d'une class comme valeur de ressource
+     *
+     * @param array    $params paramètre de la requête
+     * @return array
+     */
+    function statValueResourceClass($params){
+        $oClass = $this->api->search('resource_classes', ['term' => $params['class']])->getContent()[0];
+        $query ="SELECT 
+            r.id,
+            r.title,
+            COUNT(v.id) nbValue,
+            GROUP_CONCAT(DISTINCT p.local_name) props
+        FROM
+            resource r
+                INNER JOIN
+            value v ON v.value_resource_id = r.id
+                INNER JOIN
+            property p ON p.id = v.property_id
+        WHERE
+            resource_class_id = ?
+        GROUP BY r.id ";
+        $having = "";
+        if($params['minVal'] && $params['maxVal'])$having = " HAVING nbValue BETWEEN ".$params['minVal']." AND ".$params['maxVal'];
+        elseif($params['maxVal'])$having = " HAVING nbValue <= ".$params['maxVal'];
+        elseif($params['minVal'])$having = " HAVING nbValue >= ".$params['minVal'];
+        $query .= $having." ORDER BY r.created";
+        $rs = $this->conn->fetchAll($query,[$oClass->id()]);
+        return $rs;       
+    }
+
+    /**
+     * renvoie les coocurrences de relation d'une ressource
+     *
+     * @param array    $params paramètre de la requête
+     * @return array
+     */
+    function cooccurrenceValueResource($params){
+        $query ="SELECT 
+                rlr.title, rlr.id, COUNT(vl.id) nbValue
+                ,GROUP_CONCAT(DISTINCT v.resource_id) idsR
+            FROM
+                resource r
+                    INNER JOIN
+                value v ON v.value_resource_id = r.id
+                    INNER JOIN
+                property p ON p.id = v.property_id
+                    INNER JOIN
+                resource rl ON rl.id = v.resource_id
+                    INNER JOIN
+                value vl ON vl.resource_id = rl.id
+                    INNER JOIN
+                resource rlr ON rlr.id = vl.value_resource_id
+            WHERE
+                r.id = ?
+            GROUP BY rlr.id
+            ";
+        $rs = $this->conn->fetchAll($query,[$params['id']]);
+        return $rs;       
     }
 
     /**

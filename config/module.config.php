@@ -13,6 +13,7 @@ return [
             'DiagrammeViewHelper' => View\Helper\DiagrammeViewHelper::class,
             'ScenarioViewHelper' => View\Helper\ScenarioViewHelper::class,
             'GoogleViewHelper' => View\Helper\GoogleViewHelper::class,
+            'CartoHexaViewHelper' => View\Helper\CartoHexaViewHelper::class,
         ],
                 
         'factories'  => [
@@ -22,7 +23,7 @@ return [
             'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
             'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
             'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
-            'GoogleFactory' => Service\ViewHelper\GoogleFactory::class
+            'CartoHexaFactory' => Service\ViewHelper\CartoHexaFactory::class
         ],
 
     ],
@@ -33,7 +34,7 @@ return [
     ],
     'CartoAffect' => [
         'config' => [
-            'cartoaffect_mail' => 'anonyme.polemika@univ-paris8.fr',
+            'cartoaffect_mail' => 'anonyme.cartoaffect@univ-paris8.fr',
             'cartoaffect_pwd' => 'anonyme',
             'ajouteAnnotation'=> 1
         ],
