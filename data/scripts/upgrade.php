@@ -69,7 +69,17 @@ if (version_compare($oldVersion, '0.0.7', '<')) {
         'format' => $vocabulary['format'],
     ]);
     $vocab = $api->search('vocabularies', ['namespace_uri'=>$vocabulary['vocabulary']['o:namespace_uri']])->getContent()[0];    
-    $rdfImporter->update($vocab->id(),$diff);
+    if(!$vocab){
+        $response = $rdfImporter->import(
+            $vocabulary['strategy'],
+            $vocabulary['vocabulary'],
+            [
+                'file' => $this->modulePath()."/data/vocabularies/{$vocabulary['file']}",
+                'format' => $vocabulary['format'],
+            ]
+        );
+    }else  
+        $rdfImporter->update($vocab->id(),$diff);
 
     //ajoute un ressource template
     $installResources->createResourceTemplate($this->modulePath()."/data/resource-templates/Processus_CartoAffect.json");
@@ -202,7 +212,7 @@ if (version_compare($oldVersion, '0.0.7', '<')) {
             ,'Observez les résultats.'
             ,'Merci pour votre attention'
             ]
-        ,'schema:targetCollection'=>'2'
+        ,'schema:targetCollection'=>'4'
         ,'schema:repeatCount'=>['1', '4', '1', '1', '1'],'jdc:hasCrible'=>['Rapports aux émotions']
         ,'schema:actionApplication'=>['none', 'getItemForEval', 'setCorItemEval','showResult','showEnd']
         ,'media'=>[
