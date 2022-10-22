@@ -111,7 +111,7 @@ class GoogleViewHelper extends AbstractHelper
                     }
                 }
             }            
-            $speechClient->close();            
+            if($speechClient)$speechClient->close();            
             return $result;               
         }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit d'exécuter cette fonction'."];
     }

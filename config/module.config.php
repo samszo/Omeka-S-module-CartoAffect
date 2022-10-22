@@ -23,6 +23,7 @@ return [
             'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
             'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
             'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
+            'GoogleFactory' => Service\ViewHelper\GoogleFactory::class,
             'CartoHexaFactory' => Service\ViewHelper\CartoHexaFactory::class
         ],
 
