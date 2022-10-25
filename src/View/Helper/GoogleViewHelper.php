@@ -69,45 +69,58 @@ class GoogleViewHelper extends AbstractHelper
      */
     function speachToText($params){
         $rs = $this->acl->userIsAllowed(null,'create');
-        if($rs){
+        if($rs){            
             $result = [];
-            $item = $params['frag']; 
+            $item = !is_object($params['frag']) ? $this->api->read('items',$params['frag'])->getContent() : $params['frag']; 
             $medias = $item->media();
             foreach ($medias as $media) {
                 if($media->mediaType()=="audio/flac"){
-                    //ATTENTION problème de dns sur le serveur paris 8
-                    $oriUrl = str_replace('https://arcanes.univ-paris8.fr','http://192.168.30.208',$media->originalUrl());
-                    $this->logger->info("speachToText : originalUrl = ".$oriUrl);
+                    //vérifi si le part of speech est présent
+                    $param = array();
+                    $param['resource_classe_id']= $this->getRc('lexinfo:PartOfSpeech');                               
+                    $param['property'][0]['property']= $this->getProp("oa:hasSource")->id()."";
+                    $param['property'][0]['property']= $this->getProp("oa:hasSource")->id()."";
+                    $param['property'][0]['type']='res';
+                    $param['property'][0]['text']=$media->id().""; 
+                    $exist = $this->api->search('items',$param)->getContent();
+                    if(count($exist)){
+                        $result[]= $exist[0];
+                    }else{
+            
+                        //ATTENTION problème de dns sur le serveur paris 8
+                        $oriUrl = str_replace('https://arcanes.univ-paris8.fr','http://192.168.30.208',$media->originalUrl());
+                        $this->logger->info("speachToText : originalUrl = ".$oriUrl);
 
-                    $audioResource = file_get_contents($oriUrl);
+                        $audioResource = file_get_contents($oriUrl);
 
-                    $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            
-                    //$encoding = AudioEncoding::OGG_OPUS;
-                    //$sampleRateHertz = 24000;
-                    //$sampleRateHertz = 44100;
-                    $encoding = AudioEncoding::FLAC;
-                    $languageCode = 'fr-FR';
-                
-                    $audio = (new RecognitionAudio())
-                        ->setContent($audioResource);
+                        $speechClient=new SpeechClient(['credentials'=>$this->credentials]);            
+                        //$encoding = AudioEncoding::OGG_OPUS;
+                        //$sampleRateHertz = 24000;
+                        //$sampleRateHertz = 44100;
+                        $encoding = AudioEncoding::FLAC;
+                        $languageCode = 'fr-FR';
+                    
+                        $audio = (new RecognitionAudio())
+                            ->setContent($audioResource);
 
-                    $config = (new RecognitionConfig())
-                        ->setEncoding($encoding)
-                        ->setEnableWordTimeOffsets(true)
-                        ->setEnableWordConfidence(true)
-                        /*différent suivant le media d'où vient le fragment
-                        ->setAudioChannelCount(2)
-                        ->setSampleRateHertz($sampleRateHertz)
-                        ->setDiarizationConfig(
-                            new SpeakerDiarizationConfig(['enable_speaker_diarization'=>true,'min_speaker_count'=>1,'max_speaker_count'=>10])
-                            )
-                        */
-                        ->setLanguageCode($languageCode);
-                        
-                    $response = $speechClient->recognize($config, $audio);
-                    foreach ($response->getResults() as $r) {
-                        //ajoute la transcription
-                        $result[]=$this->addTranscription($r->getAlternatives()[0], $item);
+                        $config = (new RecognitionConfig())
+                            ->setEncoding($encoding)
+                            ->setEnableWordTimeOffsets(true)
+                            ->setEnableWordConfidence(true)
+                            /*différent suivant le media d'où vient le fragment
+                            ->setAudioChannelCount(2)
+                            ->setSampleRateHertz($sampleRateHertz)
+                            ->setDiarizationConfig(
+                                new SpeakerDiarizationConfig(['enable_speaker_diarization'=>true,'min_speaker_count'=>1,'max_speaker_count'=>10])
+                                )
+                            */
+                            ->setLanguageCode($languageCode);
+                            
+                        $response = $speechClient->recognize($config, $audio);
+                        foreach ($response->getResults() as $r) {
+                            //ajoute la transcription
+                            $result[]=$this->addTranscription($r->getAlternatives()[0], $item, $media);
+                        }
                     }
                 }
             }            
@@ -121,10 +134,11 @@ class GoogleViewHelper extends AbstractHelper
      * 
      * @param   SpeechRecognitionAlternative    $alt
      * @param   o:Item                          $item
+     * @param   o:Media                         $media
      *
      * @return o:Item
      */
-    function addTranscription($alt, $item){
+    function addTranscription($alt, $item, $media){
         $rt =  $this->getRt('Transcription');
         $oItem = [];
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
@@ -132,6 +146,10 @@ class GoogleViewHelper extends AbstractHelper
         $oItem['dcterms:title'][]=[
             'property_id' => $this->getProp('dcterms:title')->id()
             ,'@value' => $alt->getTranscript() ,'type' => 'literal'
+        ];
+        $oItem['oa:hasSource'][]=[
+            'property_id' => $this->getProp('oa:hasSource')->id()
+            ,'value_resource_id' => $media->id() ,'type' => 'resource'
         ];
         $oItem['oa:hasSource'][]=[
             'property_id' => $this->getProp('oa:hasSource')->id()
@@ -161,18 +179,15 @@ class GoogleViewHelper extends AbstractHelper
                 ,'@value' => $w->getSpeakerTag()."" ,'type' => 'literal'
             ];
         }
+        /*NON car trop gourmant
+        le lien se fais avec les mart of speech liéé
         //modifie la source
         $dataUpdate = json_decode(json_encode($item), true);
-        /*
-        $dataUpdate['dcterms:title'][0]=[
-            'property_id' => $this->getProp('dcterms:title')->id()
-            ,'@value' => $alt->getTranscript() ,'type' => 'literal'
-        ];
-        */
         foreach ($oItem['jdc:hasConcept'] as $c) {
             $dataUpdate['jdc:hasConcept'][]=$c;        
         }
         $this->api->update('items', $item->id(),$dataUpdate, [], ['continueOnError' => true,'isPartial'=>1, 'collectionAction' => 'replace']);    
+        */
         return $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
 
     }

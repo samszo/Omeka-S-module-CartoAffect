@@ -101,6 +101,9 @@ class ScenarioViewHelper extends AbstractHelper
             case 'getWebVTT':
                 $result = $this->getWebVTT($query['numPos'],$query['idSrc']);
                 break;
+            case 'setAllFrag':
+                $result = $this->setAllFrag($query);
+                break;
             case 'setAleaFrag':
                 $result = $this->setAleaFrag($query);
                 break;
@@ -113,6 +116,36 @@ class ScenarioViewHelper extends AbstractHelper
         }
         return $result;
     }
+
+    /**
+     * création de tous les fragments d'un media audiovisuel
+     * 
+     * @param   array   $query
+     *
+     * @return array
+     */
+    function setAllFrag($query){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            //récupère les références
+            $media = $this->api->read('media', $query['idMedia'])->getContent();
+            $itemMedia = $media->item();
+            //vérifie la présence de l'item pour ne pas la récréer inutilement
+            $ref = 'allFragmentOf_'.$itemMedia->id();
+            $param = array();
+            $param['property'][0]['property']= $this->getProp('dcterms:isReferencedBy')->id()."";
+            $param['property'][0]['type']='eq';
+            $param['property'][0]['text']=$ref; 
+            $exist = $this->api->search('items',$param)->getContent();
+            if(count($exist)==0){
+                //création de l'item pour contenir tous les fragments
+                $itemFrag = ['dcterms:isReferencedBy'=>$ref,'ma:isFragmentOf'=>$itemMedia->id(),'dcterms:title'=>'Tous les fragments de : '.$itemMedia->displayTitle()];
+                return ['media'=>$media,'item'=>$this->saveTrack($itemFrag,"Fragments d'un média")];                           
+            }else return ['media'=>$media,'item'=>$exist[0]];
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer des fragments."];
+
+    }
+
 
     /**
      * création d'un fragment aléatoire
