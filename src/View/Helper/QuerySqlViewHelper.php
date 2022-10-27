@@ -36,10 +36,45 @@ class QuerySqlViewHelper extends AbstractHelper
             case 'cooccurrenceValueResource':
                 $result = $this->cooccurrenceValueResource($params);
                 break;                
-        }
+            case 'tagUses':
+                $result = $this->cooccurrenceValueResource($params);
+                break;                
+            }
 
         return $result;
 
+    }
+
+    /**
+     * renvoie les usages d'un tag 
+     *
+     * @param array    $params paramètre de la requête
+     * @return array
+     */
+    function tagUses($params){
+        $oClass = $this->api->search('resource_classes', ['term' => $params['class']])->getContent()[0];
+        $query ="SELECT 
+        r.id,
+        r.title,
+        COUNT(v.id) nbValue,
+        GROUP_CONCAT(DISTINCT p.local_name) props
+    FROM
+        resource r
+            INNER JOIN
+        value v ON v.value_resource_id = r.id
+            INNER JOIN
+        property p ON p.id = v.property_id
+    WHERE
+        r.title like '%?%' 
+         AND (p.local_name = 'hasConcept' OR p.local_name = 'semanticRelation') 
+    GROUP BY r.id ";
+        $having = "";
+        if($params['minVal'] && $params['maxVal'])$having = " HAVING nbValue BETWEEN ".$params['minVal']." AND ".$params['maxVal'];
+        elseif($params['maxVal'])$having = " HAVING nbValue <= ".$params['maxVal'];
+        elseif($params['minVal'])$having = " HAVING nbValue >= ".$params['minVal'];
+        $query .= $having." ORDER BY r.created";
+        $rs = $this->conn->fetchAll($query,[$oClass->id()]);
+        return $rs;       
     }
 
     /**

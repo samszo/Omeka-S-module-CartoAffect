@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "63a960a796882d369d8462ec6f795f0e",
+    "content-hash": "836ba8dd56f0932ed3a2d0f876b5777b",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -800,6 +800,59 @@
             "time": "2022-03-20T21:55:58+00:00"
         },
         {
+            "name": "lsmonki/php-open-calais",
+            "version": "2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lsmonki/PHP-OpenCalais.git",
+                "reference": "878508dd69c17aa64f2d8e8e83b8e6bdd8c2679d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lsmonki/PHP-OpenCalais/zipball/878508dd69c17aa64f2d8e8e83b8e6bdd8c2679d",
+                "reference": "878508dd69c17aa64f2d8e8e83b8e6bdd8c2679d",
+                "shasum": ""
+            },
+            "require": {
+                "neitanod/forceutf8": "2.x",
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "OpenCalais\\": "src/OpenCalais"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dan Grossman",
+                    "homepage": "http://www.dangrossman.info/"
+                },
+                {
+                    "name": "lsmonki",
+                    "homepage": "https://github.com/lsmonki/"
+                }
+            ],
+            "description": "A PHP class for extracting entities and social tags from documents with the OpenCalais API http://www.opencalais.com/",
+            "homepage": "http://www.dangrossman.info/",
+            "keywords": [
+                "metadata",
+                "open calais",
+                "opencalais",
+                "semantic",
+                "semantic analysis",
+                "semantic data"
+            ],
+            "support": {
+                "source": "https://github.com/lsmonki/PHP-OpenCalais/tree/2.2"
+            },
+            "time": "2020-12-05T16:16:55+00:00"
+        },
+        {
             "name": "monolog/monolog",
             "version": "2.6.0",
             "source": {
@@ -902,6 +955,47 @@
                 }
             ],
             "time": "2022-05-10T09:36:00+00:00"
+        },
+        {
+            "name": "neitanod/forceutf8",
+            "version": "v2.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/neitanod/forceutf8.git",
+                "reference": "c1fbe70bfb5ad41b8ec5785056b0e308b40d4831"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/neitanod/forceutf8/zipball/c1fbe70bfb5ad41b8ec5785056b0e308b40d4831",
+                "reference": "c1fbe70bfb5ad41b8ec5785056b0e308b40d4831",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "ForceUTF8\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastián Grignoli",
+                    "email": "grignoli@gmail.com"
+                }
+            ],
+            "description": "PHP Class Encoding featuring popular Encoding::toUTF8() function --formerly known as forceUTF8()-- that fixes mixed encoded strings.",
+            "homepage": "https://github.com/neitanod/forceutf8",
+            "support": {
+                "issues": "https://github.com/neitanod/forceutf8/issues",
+                "source": "https://github.com/neitanod/forceutf8/tree/master"
+            },
+            "time": "2019-12-10T14:09:14+00:00"
         },
         {
             "name": "psr/cache",
@@ -1265,6 +1359,85 @@
             "time": "2021-10-09T06:30:16+00:00"
         },
         {
+            "name": "stichoza/google-translate-php",
+            "version": "v4.1.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Stichoza/google-translate-php.git",
+                "reference": "ea96d2ca42af3e40890cd0ca043d1c3efb46f292"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Stichoza/google-translate-php/zipball/ea96d2ca42af3e40890cd0ca043d1c3efb46f292",
+                "reference": "ea96d2ca42af3e40890cd0ca043d1c3efb46f292",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "guzzlehttp/guzzle": "~6.0|~7.0",
+                "php": "^7.1|^8"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Stichoza\\GoogleTranslate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Levan Velijanashvili",
+                    "email": "me@stichoza.com"
+                }
+            ],
+            "description": "Free Google Translate API PHP Package",
+            "homepage": "http://github.com/Stichoza/google-translate-php",
+            "keywords": [
+                "google",
+                "php",
+                "translate",
+                "translator"
+            ],
+            "support": {
+                "issues": "https://github.com/Stichoza/google-translate-php/issues",
+                "source": "https://github.com/Stichoza/google-translate-php/tree/v4.1.6"
+            },
+            "funding": [
+                {
+                    "url": "https://btc.com/bc1qc25j4x7yahghm8nnn6lypnw59nptylsw32nkfl",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://www.paypal.me/stichoza",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://ko-fi.com/stichoza",
+                    "type": "ko_fi"
+                },
+                {
+                    "url": "https://liberapay.com/stichoza",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://opencollective.com/stichoza",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://www.patreon.com/stichoza",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2022-01-25T16:55:34+00:00"
+        },
+        {
             "name": "symfony/deprecation-contracts",
             "version": "v3.1.0",
             "source": {
@@ -1330,6 +1503,108 @@
                 }
             ],
             "time": "2022-02-25T11:15:52+00:00"
+        },
+        {
+            "name": "web64/laravel-nlp",
+            "version": "v0.40",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/web64/laravel-nlp.git",
+                "reference": "e2bc56eacaefdb0d959d0407c610579737c72383"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/web64/laravel-nlp/zipball/e2bc56eacaefdb0d959d0407c610579737c72383",
+                "reference": "e2bc56eacaefdb0d959d0407c610579737c72383",
+                "shasum": ""
+            },
+            "require": {
+                "lsmonki/php-open-calais": "^2.1",
+                "stichoza/google-translate-php": "~4.1",
+                "web64/php-nlp-client": "^0.40"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Web64\\LaravelNlp\\NlpServiceProvider"
+                    ],
+                    "aliases": {
+                        "NLP": "Web64\\LaravelNlp\\Facades\\Nlp"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Web64\\LaravelNlp\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Olav Hjertaker",
+                    "email": "olav.hjertaker@gmail.com"
+                }
+            ],
+            "description": "Laravel package for accessing NLP tools",
+            "support": {
+                "issues": "https://github.com/web64/laravel-nlp/issues",
+                "source": "https://github.com/web64/laravel-nlp/tree/v0.40"
+            },
+            "time": "2020-09-19T11:34:43+00:00"
+        },
+        {
+            "name": "web64/php-nlp-client",
+            "version": "v0.40.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/web64/php-nlp-client.git",
+                "reference": "b34658717a3b09dd5dcbae842e3227086a3970ba"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/web64/php-nlp-client/zipball/b34658717a3b09dd5dcbae842e3227086a3970ba",
+                "reference": "b34658717a3b09dd5dcbae842e3227086a3970ba",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Web64\\Nlp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Olav Hjertaker",
+                    "email": "olav.hjertaker@gmail.com"
+                }
+            ],
+            "description": "Library for accessing NLP apis",
+            "keywords": [
+                "article extraction",
+                "entity extraction",
+                "language detection",
+                "natural language",
+                "nlp"
+            ],
+            "support": {
+                "issues": "https://github.com/web64/php-nlp-client/issues",
+                "source": "https://github.com/web64/php-nlp-client/tree/master"
+            },
+            "time": "2020-08-20T09:58:50+00:00"
         }
     ],
     "packages-dev": [
@@ -1378,5 +1653,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.2.0"
 }

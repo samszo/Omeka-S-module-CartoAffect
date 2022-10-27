@@ -35,6 +35,7 @@
         }
     },
     "require": {
-        "google/cloud-speech": "^1.6"
+        "google/cloud-speech": "^1.6",
+        "web64/laravel-nlp": "^0.40.0"
     }
 }

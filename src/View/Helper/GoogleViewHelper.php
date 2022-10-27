@@ -52,12 +52,64 @@ class GoogleViewHelper extends AbstractHelper
             case 'speachToText':
                 $result = $this->speachToText($query);
                 break;            
+            case 'getHistoTags':
+                $result = $this->getHistoTags($query);
+                break;            
             default:
                 $result = [];
                 break;
         }
         return $result;
     }
+
+    /**
+     * Récupère l'historique des tags d'une transcription
+     *
+     * @param array $params
+     * @return array
+     */
+    protected function getHistoTags($params)
+    {   
+        $result = [];
+        $item = !is_object($params['item']) ? $this->api->read('items',$params['item'])->getContent() : $params['item']; 
+        //récupère les transcription de l'item
+        $param = array();
+        $param['resource_classe_id']= $this->getRc('lexinfo:PartOfSpeech');                               
+        $param['property'][0]['property']= $this->getProp("oa:hasSource")->id()."";
+        $param['property'][0]['type']='res';
+        $param['property'][0]['text']=$item->id().""; 
+        $trans = $this->api->search('items',$param)->getContent();
+        foreach ($trans as $t) {
+            //récupère les infos
+            $arrMC = $t->value('jdc:hasConcept', ['all' => true]);
+            $arrConf = $t->value('lexinfo:confidence', ['all' => true]);
+            $arrStart = $t->value('oa:start', ['all' => true]);
+            $arrEnd = $t->value('oa:end', ['all' => true]);
+            $arrSpeaker = $t->value('dbo:speaker', ['all' => true]);
+            $audio = $t->media()[0];
+            $video = $audio->value('ma:isFragmentOf')->valueResource();
+            $gStart = intval($audio->value('oa:start')->__toString());
+            $gEnd = intval($audio->value('oa:end')->__toString());
+            $nb = count($arrMC); 
+            for ($i=0; $i < $nb; $i++) { 
+                $itemMC = $arrMC->valueResource();
+                if(!isset($result[$itemMC->id()]))
+                    $result[$itemMC->id()]=array('title'=>$itemMC->displayTitle(),'uses'=>[]); 
+                $result[$itemMC->id()]['uses'][]=array(
+                    'a'=>$audio->id()
+                    ,'v'=>$video->id()
+                    ,'s'=>$arrStart[$i]->__toString()
+                    ,'e'=>$arrEnd[$i]->__toString()
+                    ,'gs'=>intval($arrStart[$i]->__toString())+$gStart
+                    ,'ge'=>intval($arrEnd[$i]->__toString())+$gEnd
+                    ,'c'=>$arrConf[$i]->__toString()
+                    ,'sp'=>$arrSpeaker[$i]->__toString()
+                );
+            }
+        }
+
+    }
+
 
 
     /**
@@ -69,7 +121,8 @@ class GoogleViewHelper extends AbstractHelper
      */
     function speachToText($params){
         $rs = $this->acl->userIsAllowed(null,'create');
-        if($rs){            
+        if($rs){
+            set_time_limit(0);            
             $result = [];
             $item = !is_object($params['frag']) ? $this->api->read('items',$params['frag'])->getContent() : $params['frag']; 
             $medias = $item->media();
@@ -78,7 +131,6 @@ class GoogleViewHelper extends AbstractHelper
                     //vérifi si le part of speech est présent
                     $param = array();
                     $param['resource_classe_id']= $this->getRc('lexinfo:PartOfSpeech');                               
-                    $param['property'][0]['property']= $this->getProp("oa:hasSource")->id()."";
                     $param['property'][0]['property']= $this->getProp("oa:hasSource")->id()."";
                     $param['property'][0]['type']='res';
                     $param['property'][0]['text']=$media->id().""; 
@@ -119,7 +171,8 @@ class GoogleViewHelper extends AbstractHelper
                         $response = $speechClient->recognize($config, $audio);
                         foreach ($response->getResults() as $r) {
                             //ajoute la transcription
-                            $result[]=$this->addTranscription($r->getAlternatives()[0], $item, $media);
+                            $t = $this->addTranscription($r->getAlternatives()[0], $item, $media);
+                            $result[]=$t->id();
                         }
                     }
                 }
