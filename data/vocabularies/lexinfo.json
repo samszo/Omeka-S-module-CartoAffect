@@ -6,6 +6,8 @@
         "o:comment": "An ontology of types, values and properties to be used with the lemon model, partially derived from ISOcat."
     },
     "strategy": "file",
-    "file": "lexinfo.rdf",
-    "format": "rdf"
+    "options": {
+        "file": "lexinfo.rdf",
+        "format": "rdf"
+    }
 }

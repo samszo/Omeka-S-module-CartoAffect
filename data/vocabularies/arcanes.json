@@ -1,0 +1,12 @@
+{
+    "vocabulary": {
+        "o:namespace_uri": "https://jardindesconnaissances.univ-paris8.fr/onto/arcanes#",
+        "o:prefix": "arcanes",
+        "o:label": "Arcanes"
+    },
+    "strategy": "file",
+    "options": {
+        "file": "arcanes.ttl",
+        "format": "turtle"
+    }
+}

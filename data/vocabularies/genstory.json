@@ -1,0 +1,12 @@
+{
+    "vocabulary": {
+        "o:namespace_uri": "https://jardindesconnaissances.univ-paris8.fr/onto/genstory#",
+        "o:prefix": "genstory",
+        "o:label": "Générateur d'histoire"
+    },
+    "strategy": "file",
+    "options": {
+        "file": "genstory.ttl",
+        "format": "turtle"
+    }
+}
