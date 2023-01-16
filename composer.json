@@ -1,17 +1,16 @@
 {
-    "name": "daniel-km/omeka-s-module-comment",
-    "description": "Comment (module for Omeka S)",
+    "name": "samzo/omeka-s-module-carto-affect",
+    "description": "CartoAffect (module for Omeka S)",
     "type": "library",
-    "license": "CECILL-2.1",
+    "license": "",
     "authors": [
         {
-            "name": "Daniel Berthereau",
-            "email": "Daniel.packagist@Berthereau.net"
+            "name": "Samuel Szoniecky"
         }
     ],
-    "homepage": "https://github.com/Daniel-KM/Omeka-S-module-Comment",
+    "homepage": "https://github.com/samszo/Omeka-S-module-CartoAffect",
     "support": {
-        "issues": "https://github.com/Daniel-KM/Omeka-S-module-Comment/issues",
+        "issues": "https://github.com/samszo/Omeka-S-module-CartoAffect/issues",
         "forum": "https://forum.omeka.org/"
     },
     "keywords": [
@@ -23,15 +22,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Comment\\": "src/"
-        }
-    },
-    "require-dev": {
-        "biblibre/omeka-s-test-helper": "dev-master"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "CommentTest\\": "test/CommentTest/"
+            "CartoAffect\\": "src/"
         }
     },
     "require": {
