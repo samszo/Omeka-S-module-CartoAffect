@@ -111,10 +111,10 @@ class CartoAffectViewHelper extends AbstractHelper
         $query['property'][1]['type'] = 'res';
         $query['property'][1]['text'] = $idCrible;
         $query['property'][1]['joiner'] = "and";
-        $query['property'][1]['property'] = $pHasActant->id();
-        $query['property'][1]['type'] = 'res';
-        $query['property'][1]['text'] = $idActant;
-        $query['property'][1]['joiner'] = "and";
+        $query['property'][2]['property'] = $pHasActant->id();
+        $query['property'][2]['type'] = 'res';
+        $query['property'][2]['text'] = $idActant;
+        $query['property'][2]['joiner'] = "and";
 
         $result = $this->api->search('items', $query)->getContent();
 
