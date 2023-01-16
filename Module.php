@@ -104,6 +104,16 @@ class Module extends AbstractModule
         }
     }
 
+    protected function postInstall(): void
+    {
+        $services = $this->getServiceLocator();
+        $filepath = $this->modulePath() . '/data/scripts/install.php';
+        if (file_exists($filepath) && filesize($filepath) && is_readable($filepath)) {
+            $this->setServiceLocator($services);
+            require_once $filepath;
+        }
+    }
+
     protected function postUninstall():void
     {
         $services = $this->getServiceLocator();
