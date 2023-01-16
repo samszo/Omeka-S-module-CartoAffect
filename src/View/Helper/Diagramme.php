@@ -1,33 +1,72 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
 use DateTime;
+use Doctrine\ORM\EntityManager;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Mvc\Exception\RuntimeException;
+use Omeka\Permissions\Acl;
 
-class DiagrammeViewHelper extends AbstractHelper
+class Diagramme extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Acl
+     */
+    protected $acl;
+
+    /**
+     * @var EntityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @var string
+     */
+    protected $serverUrl;
+
     protected $props;
+
     protected $rcs;
+
     protected $rts;
+
     protected $rs;
+
     protected $view;
+
     protected $doublons;
+
     protected $nodes;
+
     protected $tags;
+
     protected $links;
-    protected $url;
+
     protected $user;
-    protected $styleNodeSrcDefault = "border-color:#ff0000;background-color:#000000;color:#ffffff;border-width:3px;font-weight:none;font-style:none ";
-    protected $styleNodeDstDefault = "border-color:green;background-color:#ffffff;color:#000000;border-width:3px;font-weight:none;font-style:none";
+
+    protected $styleNodeSrcDefault = 'border-color:#ff0000;background-color:#000000;color:#ffffff;border-width:3px;font-weight:none;font-style:none';
+
+    protected $styleNodeDstDefault = 'border-color:green;background-color:#ffffff;color:#000000;border-width:3px;font-weight:none;font-style:none';
+
     protected $styleLinkDefault = '{"from-pos":"center","to-pos":"center","from-pos":"center","to-pos":"center","color":"#000000","lineStyle":""}';
 
-    public function __construct($api, $serverUrlHelper, $acl, $em)
-    {
+    public function __construct(
+        ApiManager $api,
+        Acl $acl,
+        EntityManager $entityManager,
+        string $serverUrl
+    ) {
         $this->api = $api;
-        $this->url = $serverUrlHelper(true);
         $this->acl = $acl;
-        $this->em = $em;
+        $this->em = $entityManager;
+        $this->serverUrl = $serverUrl;
     }
 
     /**
@@ -89,7 +128,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $oItem = $this->api->read('items', $id)->getContent();
         $rs = $oItem->userIsAllowed('update');
         if ($rs) {
-            //récupère les données de l'item
+            // Récupère les données de l'item
             $data = json_decode(json_encode($oItem), true);
             $d = new DateTime('NOW');
             if (isset($data['dcterms:modified'])) {
@@ -101,7 +140,10 @@ class DiagrammeViewHelper extends AbstractHelper
             $this->api->update('items', $id, $data, [], ['continueOnError' => true,'isPartial' => 1, 'collectionAction' => 'replace']);
             $result = 1;
         } else {
-            $result = ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de modifier ce diagramme."];
+            $result = [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de modifier ce diagramme.',
+            ];
         }
         return $result;
     }
@@ -119,7 +161,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $oItem = $this->api->read('items', $id)->getContent();
         $rs = $oItem->userIsAllowed('delete');
         if ($rs) {
-            //récupère les identifiants des géométries et des archétypes liés
+            // Récupère les identifiants des géométries et des archétypes liés
             $ids = ['geo' => [],'arc' => []];
             $geos = $oItem->value('geom:geometry', ['all' => true]);
             foreach ($geos as $geo) {
@@ -130,12 +172,15 @@ class DiagrammeViewHelper extends AbstractHelper
                 }
                 $ids['geo'][] = $g->id();
             }
-            //supression dans l'ordre item -> linked ressource
+            // Supression dans l'ordre item -> linked ressource
             $ids = array_merge([$id], array_keys($ids['arc']), $ids['geo']);
             $response = $this->api->batchDelete('items', $ids, [], ['continueOnError' => true]);
             $result = 1;
         } else {
-            $result = ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de supprimer ce diagramme."];
+            $result = [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de supprimer ce diagramme.',
+            ];
         }
         return $result;
     }
@@ -175,7 +220,10 @@ class DiagrammeViewHelper extends AbstractHelper
                 }
             }
         } else {
-            $result = ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de modifier ce diagramme."];
+            $result = [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de modifier ce diagramme.',
+            ];
         }
 
         return $result;
@@ -190,7 +238,7 @@ class DiagrammeViewHelper extends AbstractHelper
     public function createDiagramme($params)
     {
         if ($this->acl->userIsAllowed(null, 'create')) {
-            //creation de la carte générale
+            // Creation de la carte générale
             $data = [];
             $rt = $this->getRt('Cartographie des expressions');
             $rc = $this->getRc('plmk:CarteExpression');
@@ -202,15 +250,19 @@ class DiagrammeViewHelper extends AbstractHelper
                 'property_id' => $this->getProp('dcterms:title')->id()];
             $data['dcterms:created'][] = ['@value' => $d->format('c'),'property_id' => $this->getProp('dcterms:created')->id(),'type' => 'literal'];
             $oItem = $this->api->create('items', $data, [], ['continueOnError' => true])->getContent();
-            //ajoute un noeud source
+            // Ajoute un noeud source
             $src = $this->createNode(['idDiagram' => $oItem->id(),'kind' => 'node','label' => 'source','x' => '200','y' => '200','cssStyle' => $this->styleNodeSrcDefault]);
-            //ajoute un noeud destination
+            // Ajoute un noeud destination
             $dst = $this->createNode(['idDiagram' => $oItem->id(),'kind' => 'node','label' => 'destination','x' => '400','y' => '200','cssStyle' => $this->styleNodeDstDefault]);
-            //ajoute un lien source->destination
+            // Ajoute un lien source->destination
             $this->createLink(['idDiagram' => $oItem->id(),'kind' => 'link','src' => $src->id(),'dst' => $dst->id(),'x' => '400','y' => '200','style' => $this->styleLinkDefault]);
             return $this->getDiagramme(false, $oItem);
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit d'ajouter un diagramme."];
+            $result = [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit d’ajouter un diagramme.',
+            ];
+            return $result;
         }
     }
 
@@ -219,7 +271,7 @@ class DiagrammeViewHelper extends AbstractHelper
         $rt = $this->getRt('Espace sémantique');
         $rc = $this->getRc('geom:Envelope');
 
-        //création de l'enveloppe
+        // Création de l'enveloppe
         $d = new DateTime('NOW');
         $data = [];
         $data['o:resource_class'] = ['o:id' => $rc->id()];
@@ -237,16 +289,16 @@ class DiagrammeViewHelper extends AbstractHelper
         if (isset($params['idArchetype'])) {
             $data['jdc:hasArchetype'][] = ['property_id' => $this->getProp('jdc:hasArchetype')->id(),'value_resource_id' => $params['idArchetype'],'type' => 'resource'];
         }
-        //récupère le tag
+        // Récupère le tag
         $tag = $this->getTag($params['label']);
         $data['skos:semanticRelation'][] = ['property_id' => $this->getProp('skos:semanticRelation')->id(),'value_resource_id' => $tag->id(),'type' => 'resource'];
-        //création de l'item
+        // Création de l'item
         $oItem = $this->api->create('items', $data, [], ['continueOnError' => true])->getContent();
         if (isset($params['id'])) {
             $this->nodes[$params['id']] = $oItem->id();
         }
 
-        //ajoute la relation à la carte
+        // Ajoute la relation à la carte
         $data = [];
         $data['geom:geometry'][] = ['property_id' => $this->getProp('geom:geometry')->id(),'value_resource_id' => $oItem->id(),'type' => 'resource'];
         $this->api->update('items', $params['idDiagram'], $data, [], ['isPartial' => true, 'continueOnError' => true, 'collectionAction' => 'append']);
@@ -259,7 +311,7 @@ class DiagrammeViewHelper extends AbstractHelper
         //$rt =  $this->getRt('Espace sémantique');
         $rc = $this->getRc('geom:Line');
 
-        //création de la ligne
+        // Création de la ligne
         $d = new DateTime('NOW');
         $data = [];
         $data['o:resource_class'] = ['o:id' => $rc->id()];
@@ -279,10 +331,10 @@ class DiagrammeViewHelper extends AbstractHelper
         $data['dcterms:title'][] = ['type' => 'literal',
             '@value' => $params['kind'] . ' : ' . $data['ma:hasSource'][0]['value_resource_id'] . ' -> ' . $data['ma:isSourceOf'][0]['value_resource_id'],
             'property_id' => $this->getProp('dcterms:title')->id()];
-        //création de l'item
+        // Création de l'itrem
         $oItem = $this->api->create('items', $data, [], ['continueOnError' => true])->getContent();
 
-        //ajoute la relation à la carte
+        // Ajoute la relation à la carte
         $data = [];
         $data['geom:geometry'][] = ['property_id' => $this->getProp('geom:geometry')->id(),'value_resource_id' => $oItem->id(),'type' => 'resource'];
         $this->api->update('items', $params['idDiagram'], $data, [], ['isPartial' => true, 'continueOnError' => true, 'collectionAction' => 'append']);
@@ -398,12 +450,12 @@ class DiagrammeViewHelper extends AbstractHelper
 
     public function getDiagrammes(): void
     {
-        //récupère toute les carte d'expression
+        // Récupère toute les cartes d'expression
         $query = [
             'resource_class_id' => $this->props['plmk:CarteExpression']->id(),
         ];
         $items = $this->api->search('items', $query, ['limit' => 0])->getContent();
-        //construction des résultats
+        // Construction des résultats
         foreach ($items as $i) {
             $this->rs[] = $this->getDiagrammeInfo($i);
         }
@@ -435,7 +487,7 @@ class DiagrammeViewHelper extends AbstractHelper
     }
 
     /**
-     * création d'un archétype en relation avec une géomatrie d'un diagramme
+     * Création d'un archétype en relation avec une géomatrie d'un diagramme
      *
      * @param object     $oItem
      * @param int        $idDiagram
@@ -458,14 +510,14 @@ class DiagrammeViewHelper extends AbstractHelper
         $valueObject['property_id'] = $this->getProp('jdc:hasArchetype')->id();
         $valueObject['type'] = 'resource';
         $oItem['jdc:hasArchetype'][] = $valueObject;
-        $rslt = $this->api->update('items', $item->id(), $oItem, [], ['continueOnError' => true,'isPartial' => 1, 'collectionAction' => 'append']);
+        $this->api->update('items', $item->id(), $oItem, [], ['continueOnError' => true,'isPartial' => 1, 'collectionAction' => 'append']);
 
         return $this->getArchetypeForEditor($arc);
     }
 
     public function setArchetype($rc, $style, $idDiagram)
     {
-        //recherche si l'archétype existe pour ce diagramme
+        // Recherche si l'archétype existe pour ce diagramme
         $ref = md5($rc . $style . $idDiagram);
         $param = [];
         $param['property'][0]['property'] = $this->getProp('dcterms:isReferencedBy')->id();
@@ -515,10 +567,10 @@ class DiagrammeViewHelper extends AbstractHelper
             $type = 'node';
         }
         return [
-            "id" => $arc->id(),
-            "type" => $type,
-            "name" => $arc->value('dcterms:title')->__toString(),
-            "cssStyle" => $arc->value('dcterms:description')->__toString(),
+            'id' => $arc->id(),
+            'type' => $type,
+            'name' => $arc->value('dcterms:title')->__toString(),
+            'cssStyle' => $arc->value('dcterms:description')->__toString(),
         ];
     }
 
@@ -540,13 +592,14 @@ class DiagrammeViewHelper extends AbstractHelper
         ];
         */
         //print_r($_SERVER);
-        $url = explode('?', $this->url)[0];
-        $result = ['name' => $oItem->displayTitle() . " (" . $c . " - " . $dC . ")"
-          ,'id' => $oItem->id()
-          ,'title' => $oItem->displayTitle()
-          ,'urlData' => $url . '?json=1&type=diagramme&action=getDiagramme&id=' . $oItem->id()
-          ,'urlArchetypes' => $url . '?json=1&type=diagramme&action=getArchetypes&id=' . $oItem->id()
-          ,'type' => 'Diagram_argument_force',
+        $url = explode('?', $this->serverUrl)[0];
+        $result = [
+            'name' => $oItem->displayTitle() . " (" . $c . " - " . $dC . ")",
+            'id' => $oItem->id(),
+            'title' => $oItem->displayTitle(),
+            'urlData' => $url . '?json=1&type=diagramme&action=getDiagramme&id=' . $oItem->id(),
+            'urlArchetypes' => $url . '?json=1&type=diagramme&action=getArchetypes&id=' . $oItem->id(),
+            'type' => 'Diagram_argument_force',
         ];
         return $result;
     }
@@ -554,7 +607,7 @@ class DiagrammeViewHelper extends AbstractHelper
     public function getGeoInfo($oItem, $idDiagram)
     {
         $rc = $oItem->displayResourceClassLabel() ;
-        //récupère l'archétype
+        // Récupère l'archétype
         if (!$oItem->value('jdc:hasArchetype')) {
             $arc = $this->getArchetype($oItem, $idDiagram);
         } else {
@@ -567,26 +620,28 @@ class DiagrammeViewHelper extends AbstractHelper
 
         switch ($rc) {
             case 'Ligne':
-                $this->rs['links'][] = ['label' => $oItem->displayTitle()
-                        ,'id' => $oItem->id()
-                        ,'idDiagram' => $idDiagram
-                        ,'idArchetype' => $arc['id']
-                        ,'src' => $oItem->value('ma:hasSource') ? $oItem->value('ma:hasSource')->valueResource()->id() : false
-                        ,'dst' => $oItem->value('ma:isSourceOf') ? $oItem->value('ma:isSourceOf')->valueResource()->id() : false
-                        ,'urlAdmin' => $oItem->adminUrl('edit'),
-                    ];
+                $this->rs['links'][] = [
+                    'label' => $oItem->displayTitle(),
+                    'id' => $oItem->id(),
+                    'idDiagram' => $idDiagram,
+                    'idArchetype' => $arc['id'],
+                    'src' => $oItem->value('ma:hasSource') ? $oItem->value('ma:hasSource')->valueResource()->id() : false,
+                    'dst' => $oItem->value('ma:isSourceOf') ? $oItem->value('ma:isSourceOf')->valueResource()->id() : false,
+                    'urlAdmin' => $oItem->adminUrl('edit'),
+                ];
                 break;
             case 'Envelope':
-                $this->rs['nodes'][] = ['label' => $oItem->value('skos:semanticRelation')->valueResource()->displayTitle()
-                        ,'id' => $oItem->id()
-                        ,'idDiagram' => $idDiagram
-                        ,'idArchetype' => $arc['id']
-                        ,'idConcept' => $oItem->value('skos:semanticRelation')->valueResource()->id()
-                        ,'x' => $oItem->value('geom:coordX')->__toString()
-                        ,'y' => $oItem->value('geom:coordY')->__toString()
-                        ,'type' => $oItem->value('dcterms:type')->__toString()
-                        ,'urlAdmin' => $oItem->adminUrl('edit'),
-                    ];
+                $this->rs['nodes'][] = [
+                    'label' => $oItem->value('skos:semanticRelation')->valueResource()->displayTitle(),
+                    'id' => $oItem->id(),
+                    'idDiagram' => $idDiagram,
+                    'idArchetype' => $arc['id'],
+                    'idConcept' => $oItem->value('skos:semanticRelation')->valueResource()->id(),
+                    'x' => $oItem->value('geom:coordX')->__toString(),
+                    'y' => $oItem->value('geom:coordY')->__toString(),
+                    'type' => $oItem->value('dcterms:type')->__toString(),
+                    'urlAdmin' => $oItem->adminUrl('edit'),
+                ];
                 break;
         }
 
@@ -624,7 +679,7 @@ class DiagrammeViewHelper extends AbstractHelper
      */
     protected function ajouteCarte($data)
     {
-        //vérifie la présence de l'item pour ne pas écraser les données
+        // Vérifie la présence de l'item pour ne pas écraser les données
         $param = [];
         $param['property'][0]['property'] = $this->properties['dcterms']['title']->id() . "";
         $param['property'][0]['type'] = 'eq';
@@ -639,7 +694,7 @@ class DiagrammeViewHelper extends AbstractHelper
             $oItem = $result[0]->getContent();
             throw new RuntimeException("La carte existe déjà : '" . $oItem->displayTitle() . "' (" . $oItem->id() . ").");
         } else {
-            //creation de la carte générale
+            // Creation de la carte générale
             $oItem = [];
             $oItem['o:item_set'] = [['o:id' => $this->itemSet->id()]];
             $oItem['o:resource_class'] = ['o:id' => $this->resourceClasses['plmk']['CarteExpression']->id()];
@@ -649,7 +704,7 @@ class DiagrammeViewHelper extends AbstractHelper
             $d['width'] = $data['ivml:appdata']['map']['width'];
             $d['height'] = $data['ivml:appdata']['map']['height'];
 
-            //récupération du style de la carte
+            // Récupération du style de la carte
             $d['style'] = json_encode($data['ivml:appdata']['map']['style-sheet-list']['style-sheet']);
             $oItem = $this->mapValues($d, $oItem);
 
@@ -657,7 +712,7 @@ class DiagrammeViewHelper extends AbstractHelper
         }
         //$this->logger->info("UPDATE ITEM".$result[0]->id()." = ".json_encode($result[0]));
         $oItem = $response->getContent();
-        //enregistre la progression du traitement
+        // Enregistre la progression du traitement
         $importItem = [
             'o:item' => ['o:id' => $oItem->id()],
             'o-module-cmap_import:import' => ['o:id' => $this->idImport],
@@ -683,15 +738,15 @@ class DiagrammeViewHelper extends AbstractHelper
             if ($this->shouldStop()) {
                 return;
             }
-            //création du lien
+            // Création du lien
             $oItem = [];
             $oItem['o:resource_class'] = ['o:id' => $this->resourceClasses['geom']['Line']->id()];
             $oItem['o:resource_templates'] = ['o:id' => $this->resourceTemplate['Relation sémantique']->id()];
 
-            //création du titre
+            // Création du titre
             $d['titre'] = $d['label'] ? $d['label'] . ' : ' . $d['id'] : $d['from'] . ' -> ' . $d['to'];
 
-            //construction du style
+            // Construction du style
             $d['style'] = '{';
             for ($i = 0; $i < count($d['ivml:appdata']['connection']); $i++) {
                 $d['style'] .= $d['ivml:appdata']['connection-appearance'][0]['from-pos'] ? '"from-pos":"' . $d['ivml:appdata']['connection-appearance'][0]['from-pos'] . '",' : '';
@@ -709,7 +764,7 @@ class DiagrammeViewHelper extends AbstractHelper
             $d['style'] .= '"lineStyle":"' . $d['lineStyle'] . '"';
             $d['style'] .= '}';
 
-            //ajoute les références au from et au to
+            // Ajoute les références au from et au to
             $d['from'] = $arrEntities[$d['from']];
             $d['to'] = $arrEntities[$d['to']];
 
@@ -717,12 +772,12 @@ class DiagrammeViewHelper extends AbstractHelper
             $response = $this->api->create('items', $oItem, [], ['continueOnError' => true]);
             $oItem = $response->getContent();
 
-            //création le concept
+            // Création le concept
             if ($d['label']) {
                 $this->getTag($d['label'], $oItem);
             }
 
-            //ajoute la relation à la carte
+            // Ajoute la relation à la carte
             $param = [];
             $valueObject = [];
             $valueObject['property_id'] = $this->properties["geom"]["geometry"]->id();
@@ -731,7 +786,7 @@ class DiagrammeViewHelper extends AbstractHelper
             $param[$this->properties["geom"]["geometry"]->term()][] = $valueObject;
             $this->api->update('items', $oItemCarte->id(), $param, [], ['isPartial' => true, 'continueOnError' => true, 'collectionAction' => 'append']);
 
-            //enregistre la progression du traitement
+            // Enregistre la progression du traitement
             $importItem = [
                 'o:item' => ['o:id' => $oItem->id()],
                 'o-module-cmap_import:import' => ['o:id' => $this->idImport],

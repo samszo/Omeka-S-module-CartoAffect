@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
 use Google\Cloud\Speech\V1\RecognitionAudio;
@@ -6,26 +7,53 @@ use Google\Cloud\Speech\V1\RecognitionConfig;
 use Google\Cloud\Speech\V1\RecognitionConfig\AudioEncoding;
 use Google\Cloud\Speech\V1\SpeakerDiarizationConfig;
 use Google\Cloud\Speech\V1\SpeechClient;
-
+use Laminas\Log\Logger;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Permissions\Acl;
 
-class GoogleViewHelper extends AbstractHelper
+class Google extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Acl
+     */
     protected $acl;
+
+    /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
+     * @var array
+     */
     protected $config;
+
     protected $credentials;
+
     protected $props;
+
     protected $rcs;
+
     protected $rts;
 
-    public function __construct($api, $acl, $config, $logger)
-    {
+    public function __construct(
+        ApiManager $api,
+        Acl $acl,
+        Logger $logger,
+        array $config
+    ) {
         $this->api = $api;
         $this->acl = $acl;
-        $this->config = $config;
-        $this->credentials = json_decode(file_get_contents(OMEKA_PATH . '/modules/CartoAffect/config/code_secret_client.json'), true);
         $this->logger = $logger;
+        $this->config = $config;
+
+        $this->credentials = json_decode(file_get_contents(OMEKA_PATH . '/modules/CartoAffect/config/code_secret_client.json'), true);
 
         require_once OMEKA_PATH . '/modules/CartoAffect/vendor/autoload.php';
     }
@@ -33,11 +61,9 @@ class GoogleViewHelper extends AbstractHelper
     /**
      * gestion des appels aux API de Google
      *
-     * @param Omeka\View\Helper\Params     $params
-     *
-     * @return json
+     * @param \Omeka\View\Helper\Params     $params
      */
-    public function __invoke($params)
+    public function __invoke($params): array
     {
         if (is_array($params)) {
             $query = $params;
@@ -69,15 +95,15 @@ class GoogleViewHelper extends AbstractHelper
     {
         $result = [];
         $item = !is_object($params['item']) ? $this->api->read('items', $params['item'])->getContent() : $params['item'];
-        //récupère les transcription de l'item
+        // Récupère les transcription de l'item
         $param = [];
         $param['resource_classe_id'] = $this->getRc('lexinfo:PartOfSpeech');
         $param['property'][0]['property'] = $this->getProp("oa:hasSource")->id() . "";
         $param['property'][0]['type'] = 'res';
-        $param['property'][0]['text'] = $item->id() . "";
+        $param['property'][0]['text'] = (string) $item->id() . "";
         $trans = $this->api->search('items', $param)->getContent();
         foreach ($trans as $t) {
-            //récupère les infos
+            // Récupère les infos
             $arrMC = $t->value('jdc:hasConcept', ['all' => true]);
             $arrConf = $t->value('lexinfo:confidence', ['all' => true]);
             $arrStart = $t->value('oa:start', ['all' => true]);
@@ -91,17 +117,20 @@ class GoogleViewHelper extends AbstractHelper
             for ($i = 0; $i < $nb; $i++) {
                 $itemMC = $arrMC->valueResource();
                 if (!isset($result[$itemMC->id()])) {
-                    $result[$itemMC->id()] = ['title' => $itemMC->displayTitle(),'uses' => []];
+                    $result[$itemMC->id()] = [
+                        'title' => $itemMC->displayTitle(),
+                        'uses' => [],
+                    ];
                 }
                 $result[$itemMC->id()]['uses'][] = [
-                    'a' => $audio->id()
-                    ,'v' => $video->id()
-                    ,'s' => $arrStart[$i]->__toString()
-                    ,'e' => $arrEnd[$i]->__toString()
-                    ,'gs' => intval($arrStart[$i]->__toString()) + $gStart
-                    ,'ge' => intval($arrEnd[$i]->__toString()) + $gEnd
-                    ,'c' => $arrConf[$i]->__toString()
-                    ,'sp' => $arrSpeaker[$i]->__toString(),
+                    'a' => $audio->id(),
+                    'v' => $video->id(),
+                    's' => $arrStart[$i]->__toString(),
+                    'e' => $arrEnd[$i]->__toString(),
+                    'gs' => intval($arrStart[$i]->__toString()) + $gStart,
+                    'ge' => intval($arrEnd[$i]->__toString()) + $gEnd,
+                    'c' => $arrConf[$i]->__toString(),
+                    'sp' => $arrSpeaker[$i]->__toString(),
                 ];
             }
         }
@@ -124,7 +153,7 @@ class GoogleViewHelper extends AbstractHelper
             $medias = $item->media();
             foreach ($medias as $media) {
                 if ($media->mediaType() == "audio/flac") {
-                    //vérifi si le part of speech est présent
+                    // Vérifie si le part of speech est présent
                     $param = [];
                     $param['resource_classe_id'] = $this->getRc('lexinfo:PartOfSpeech');
                     $param['property'][0]['property'] = $this->getProp("oa:hasSource")->id() . "";
@@ -134,7 +163,7 @@ class GoogleViewHelper extends AbstractHelper
                     if (count($exist)) {
                         $result[] = $exist[0];
                     } else {
-                        //ATTENTION problème de dns sur le serveur paris 8
+                        // ATTENTION problème de dns sur le serveur paris 8
                         $oriUrl = str_replace('https://arcanes.univ-paris8.fr', 'http://192.168.30.208', $media->originalUrl());
                         $this->logger->info("speachToText : originalUrl = " . $oriUrl);
 
@@ -165,7 +194,7 @@ class GoogleViewHelper extends AbstractHelper
 
                         $response = $speechClient->recognize($config, $audio);
                         foreach ($response->getResults() as $r) {
-                            //ajoute la transcription
+                            // Ajoute la transcription
                             $t = $this->addTranscription($r->getAlternatives()[0], $item, $media);
                             $result[] = $t->id();
                         }
@@ -177,7 +206,10 @@ class GoogleViewHelper extends AbstractHelper
             }
             return $result;
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit d'exécuter cette fonction'."];
+            return [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit d’exécuter cette fonction.',
+            ];
         }
     }
 
@@ -197,39 +229,47 @@ class GoogleViewHelper extends AbstractHelper
         $oItem['o:resource_class'] = ['o:id' => $rt->resourceClass()->id()];
         $oItem['o:resource_template'] = ['o:id' => $rt->id()];
         $oItem['dcterms:title'][] = [
-            'property_id' => $this->getProp('dcterms:title')->id()
-            ,'@value' => $alt->getTranscript() ,'type' => 'literal',
+            'property_id' => $this->getProp('dcterms:title')->id(),
+            '@value' => $alt->getTranscript(),
+            'type' => 'literal',
         ];
         $oItem['oa:hasSource'][] = [
-            'property_id' => $this->getProp('oa:hasSource')->id()
-            ,'value_resource_id' => $media->id() ,'type' => 'resource',
+            'property_id' => $this->getProp('oa:hasSource')->id(),
+            'value_resource_id' => $media->id(),
+            'type' => 'resource',
         ];
         $oItem['oa:hasSource'][] = [
-            'property_id' => $this->getProp('oa:hasSource')->id()
-            ,'value_resource_id' => $item->id() ,'type' => 'resource',
+            'property_id' => $this->getProp('oa:hasSource')->id(),
+            'value_resource_id' => $item->id(),
+            'type' => 'resource',
         ];
         $words = $alt->getWords();
         foreach ($words as $w) {
             $t = $this->getTag($w->getWord());
             $oItem['jdc:hasConcept'][] = [
-                'property_id' => $this->getProp('jdc:hasConcept')->id()
-                ,'value_resource_id' => $t->id() ,'type' => 'resource',
+                'property_id' => $this->getProp('jdc:hasConcept')->id(),
+                'value_resource_id' => $t->id(),
+                'type' => 'resource',
             ];
             $oItem['oa:start'][] = [
-                'property_id' => $this->getProp('oa:start')->id()
-                ,'@value' => $w->getStartTime()->getSeconds() . ":" . $w->getStartTime()->getNanos() ,'type' => 'literal',
+                'property_id' => $this->getProp('oa:start')->id(),
+                '@value' => $w->getStartTime()->getSeconds() . ":" . $w->getStartTime()->getNanos(),
+                'type' => 'literal',
             ];
             $oItem['oa:end'][] = [
-                'property_id' => $this->getProp('oa:end')->id()
-                ,'@value' => $w->getEndTime()->getSeconds() . ":" . $w->getEndTime()->getNanos() ,'type' => 'literal',
+                'property_id' => $this->getProp('oa:end')->id(),
+                '@value' => $w->getEndTime()->getSeconds() . ":" . $w->getEndTime()->getNanos(),
+                'type' => 'literal',
             ];
             $oItem['lexinfo:confidence'][] = [
-                'property_id' => $this->getProp('lexinfo:confidence')->id()
-                ,'@value' => $w->getConfidence() . "" ,'type' => 'literal',
+                'property_id' => $this->getProp('lexinfo:confidence')->id(),
+                '@value' => $w->getConfidence() . "",
+                'type' => 'literal',
             ];
             $oItem['dbo:speaker'][] = [
-                'property_id' => $this->getProp('dbo:speaker')->id()
-                ,'@value' => $w->getSpeakerTag() . "" ,'type' => 'literal',
+                'property_id' => $this->getProp('dbo:speaker')->id(),
+                '@value' => $w->getSpeakerTag() . "",
+                'type' => 'literal',
             ];
         }
         /*NON car trop gourmant
@@ -252,7 +292,7 @@ class GoogleViewHelper extends AbstractHelper
      */
     protected function getTag($tag)
     {
-        //vérifie la présence de l'item pour gérer la création
+        // Vérifie la présence de l'item pour gérer la création
         $param = [];
         $param['property'][0]['property'] = $this->getProp("skos:prefLabel")->id() . "";
         $param['property'][0]['type'] = 'eq';
@@ -274,7 +314,7 @@ class GoogleViewHelper extends AbstractHelper
             $valueObject['@value'] = $tag;
             $valueObject['type'] = 'literal';
             $oItem["skos:prefLabel"][] = $valueObject;
-            //création du tag
+            // Création du tag
             return $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
         }
     }
@@ -294,6 +334,7 @@ class GoogleViewHelper extends AbstractHelper
         }
         return $this->rcs[$t];
     }
+
     public function getRt($l)
     {
         if (!isset($this->rts[$l])) {

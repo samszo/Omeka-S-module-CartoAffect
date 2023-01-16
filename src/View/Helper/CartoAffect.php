@@ -1,26 +1,58 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
 use DateTime;
+use Laminas\Authentication\AuthenticationService;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
 
-class CartoAffectViewHelper extends AbstractHelper
+class CartoAffect extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var AuthenticationService
+     */
     protected $auth;
+
+    /**
+     * @var array
+     */
     protected $config;
+
+    /**
+     * @var
+     */
     protected $customVocab;
-    protected $p;
+
+    /**
+     * @var array
+     */
+    protected $properties;
+
+    /**
+     * @var
+     */
     protected $actant;
 
-    public function __construct($api, $auth, $config)
-    {
+    public function __construct(
+        ApiManager $api,
+        AuthenticationService $auth,
+        array $config
+    ) {
         $this->api = $api;
         $this->auth = $auth;
         $this->config = $config;
     }
 
-    public function __invoke($data)
+    /**
+     * @return mixed
+     */
+    public function __invoke(array $data)
     {
         if (isset($data['logout'])) {
             $this->auth->clearIdentity();
@@ -158,14 +190,14 @@ class CartoAffectViewHelper extends AbstractHelper
     {
         $rt = $this->api->search('resource_templates', ['label' => 'Processus CartoAffect'])->getContent()[0];
         $rc = $this->api->search('resource_classes', ['term' => 'schema:Action'])->getContent()[0];
-        //création de l'action
+        // Création de l'action
         $d = new DateTime('NOW');
         $dt = [
-          'dcterms:title' => $data['actionApplication']->displayTitle() . ' - ' . $this->actant->displayTitle() . ' : ' . $d->format('Y-m-d')
-          ,'dcterms:isReferencedBy' => $data['actionApplication']->id() . '_' . $this->actant->id() . '_' . $d->format('U')
-          ,'schema:actionApplication' => [0 => ['value' => $data['actionApplication']->id()]]
-          ,'dcterms:created' => $d->format('c')
-          ,'jdc:hasActant' => [0 => ['value' => $this->actant->id()]],
+            'dcterms:title' => $data['actionApplication']->displayTitle() . ' - ' . $this->actant->displayTitle() . ' : ' . $d->format('Y-m-d'),
+            'dcterms:isReferencedBy' => $data['actionApplication']->id() . '_' . $this->actant->id() . '_' . $d->format('U'),
+            'schema:actionApplication' => [0 => ['value' => $data['actionApplication']->id()]],
+            'dcterms:created' => $d->format('c'),
+            'jdc:hasActant' => [0 => ['value' => $this->actant->id()]],
         ];
         $oItem = $this->setData($dt, $rt, $rc);
         $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
@@ -183,7 +215,7 @@ class CartoAffectViewHelper extends AbstractHelper
     {
         $rt = $this->api->search('resource_templates', ['label' => $rtName])->getContent()[0];
         $rc = $this->api->search('resource_classes', ['term' => 'jdc:SemanticPosition'])->getContent()[0];
-        //pas de mise à jour des positions
+        // Pas de mise à jour des positions
         foreach ($data['rapports'] as $k => $r) {
             if (is_int($k)) {
                 $r['jdc:hasActant'] = $data['rapports']['jdc:hasActant'];
@@ -354,42 +386,42 @@ class CartoAffectViewHelper extends AbstractHelper
             return;
         }
 
-        //récupère les propriétés
+        // Récupère les propriétés
         $this->cacheCustomVocab();
         $this->cacheProperties();
         $rtA = $this->api->search('resource_templates', ['label' => 'Annotation'])->getContent()[0];
         $rcA = $this->api->search('resource_classes', ['term' => 'oa:Annotation'])->getContent()[0];
 
-        //création de l'annotation
+        // Création de l'annotation
         $oItem = [];
 
-        //motivation
+        // Motivation
         $valueObject = [];
-        $valueObject['property_id'] = $this->p['motivatedBy']->id();
+        $valueObject['property_id'] = $this->properties['motivatedBy']->id();
         $valueObject['@value'] = isset($data['motivation']) ? $data['motivation'] : 'oa:tagging';
         $valueObject['type'] = 'customvocab:' . $this->customVocab['Annotation oa:motivatedBy'];
-        $oItem[$this->p['motivatedBy']->term()][] = $valueObject;
+        $oItem[$this->properties['motivatedBy']->term()][] = $valueObject;
 
-        //annotator = actant
+        // annotator = actant
         if (isset($this->actant)) {
             $valueObject = [];
             $valueObject['value_resource_id'] = $this->actant->id();
-            $valueObject['property_id'] = $this->p['creator']->id();
+            $valueObject['property_id'] = $this->properties['creator']->id();
             $valueObject['type'] = 'resource';
-            $oItem[$this->p['creator']->term()][] = $valueObject;
+            $oItem[$this->properties['creator']->term()][] = $valueObject;
         }
 
-        //Body = doc cf. https://www.w3.org/TR/annotation-vocab/#hasselector
+        // Body = doc cf. https://www.w3.org/TR/annotation-vocab/#hasselector
         $oItem['oa:hasBody'][] = $this->getBody($data);
 
-        //target = tag
+        // target = tag
         $oItem['oa:hasTarget'][] = $this->getTarget($data);
 
-        //type omeka
+        // type omeka
         $oItem['o:resource_class'] = ['o:id' => $rcA->id()];
         $oItem['o:resource_template'] = ['o:id' => $rtA->id()];
 
-        //création de l'annotation
+        // Création de l'annotation
         $result = $this->api->create('annotations', $oItem, [], ['continueOnError' => true])->getContent();
 
         return $result;
@@ -447,15 +479,15 @@ class CartoAffectViewHelper extends AbstractHelper
             }
         }
         if ($val) {
-            $body['rdf:value'][] = ['@value' => $val,'property_id' => $this->p['value']->id(),'type' => 'literal'];
+            $body['rdf:value'][] = ['@value' => $val,'property_id' => $this->properties['value']->id(),'type' => 'literal'];
         }
 
         if (isset($data['item'])) {
-            $body['rdf:value'][] = ['value_resource_id' => $data['item']->id(),'property_id' => $this->p['value']->id(),'type' => 'resource'];
+            $body['rdf:value'][] = ['value_resource_id' => $data['item']->id(),'property_id' => $this->properties['value']->id(),'type' => 'resource'];
         }
 
         $body['oa:hasPurpose'][0]['@value'] = isset($data['objectif']) ? $data['objectif'] : 'oa:editing';
-        $body['oa:hasPurpose'][0]['property_id'] = $this->p["hasPurpose"]->id();
+        $body['oa:hasPurpose'][0]['property_id'] = $this->properties["hasPurpose"]->id();
         $body['oa:hasPurpose'][0]['type'] = 'customvocab:' . $this->customVocab['Annotation Body oa:hasPurpose'];
 
         return $body;
@@ -472,17 +504,17 @@ class CartoAffectViewHelper extends AbstractHelper
         $target = [];
         foreach ($data['rapports']['jdc:hasDoc'] as $d) {
             $valueObject = [];
-            $valueObject['property_id'] = $this->p['hasSource']->id();
+            $valueObject['property_id'] = $this->properties['hasSource']->id();
             $valueObject['type'] = 'resource';
             $valueObject['value_resource_id'] = $d['value'];
-            $target[$this->p['hasSource']->term()][] = $valueObject;
+            $target[$this->properties['hasSource']->term()][] = $valueObject;
         }
         foreach ($data['rapports']['jdc:hasDoc'] as $d) {
             $valueObject = [];
-            $valueObject['property_id'] = $this->p['hasSource']->id();
+            $valueObject['property_id'] = $this->properties['hasSource']->id();
             $valueObject['type'] = 'resource';
             $valueObject['value_resource_id'] = $d['value'];
-            $body[$this->p['hasSource']->term()][] = $valueObject;
+            $body[$this->properties['hasSource']->term()][] = $valueObject;
         }
 
         return $target;
@@ -493,7 +525,11 @@ class CartoAffectViewHelper extends AbstractHelper
      */
     protected function cacheCustomVocab(): void
     {
-        $arrRT = ["Annotation Target rdf:type","Annotation oa:motivatedBy","Annotation Body oa:hasPurpose"];
+        $arrRT = [
+            'Annotation Target rdf:type',
+            'Annotation oa:motivatedBy',
+            'Annotation Body oa:hasPurpose',
+        ];
         foreach ($arrRT as $label) {
             $customVocab = $this->api->read('custom_vocabs', [
                 'label' => $label,
@@ -507,7 +543,7 @@ class CartoAffectViewHelper extends AbstractHelper
      */
     protected function cacheProperties(): void
     {
-        $this->p = [
+        $this->properties = [
           'creator' => $this->api->search('properties', ['term' => 'dcterms:creator'])->getContent()[0],
           'value' => $this->api->search('properties', ['term' => 'rdf:value'])->getContent()[0],
           'type' => $this->api->search('properties', ['term' => 'rdf:type'])->getContent()[0],

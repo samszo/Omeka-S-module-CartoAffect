@@ -1,33 +1,90 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
+use Laminas\Log\Logger;
 use Laminas\View\Helper\AbstractHelper;
 use Omeka\Api\Exception\RuntimeException;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Permissions\Acl;
 
-class ScenarioViewHelper extends AbstractHelper
+class Scenario extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Acl
+     */
     protected $acl;
+
+    /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
+     * @var array
+     */
     protected $config;
+
     protected $doublons;
+
     protected $props;
+
     protected $rcs;
+
     protected $rts;
-    protected $propsValueRessource = ['oa:hasSource', 'oa:hasTarget', 'oa:hasBody', 'dcterms:creator','oa:hasScope'
-        ,'genstory:hasActant','genstory:hasAffect','genstory:hasEvenement','genstory:hasLieu','genstory:hasObjet'
-        ,'genstory:hasFonction','genstory:hasParam','schema:category','jdc:hasPhysique','jdc:hasActant','jdc:hasConcept'];
+
+    protected $propsValueRessource = [
+        'oa:hasSource',
+        'oa:hasTarget',
+        'oa:hasBody',
+        'dcterms:creator',
+        'oa:hasScope',
+        'genstory:hasActant',
+        'genstory:hasAffect',
+        'genstory:hasEvenement',
+        'genstory:hasLieu',
+        'genstory:hasObjet',
+        'genstory:hasFonction',
+        'genstory:hasParam',
+        'schema:category',
+        'jdc:hasPhysique',
+        'jdc:hasActant',
+        'jdc:hasConcept',
+    ];
+
+    /**
+     * @var string
+     */
     protected $temp;
+
+    /**
+     * @var string
+     */
     protected $tempPath;
+
+    /**
+     * @var string
+     */
     protected $tempUrl;
 
-    public function __construct($arrS)
-    {
+    public function __construct(
+        ApiManager $api,
+        Acl $acl,
+        array $config,
+        string $basePath
+    ) {
         error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-        $this->api = $arrS['api'];
-        $this->acl = $arrS['acl'];
-        $this->config = $arrS['config'];
-        $this->tempPath = $arrS['basePath'] . '/tmp';
+        $this->api = $api;
+        $this->acl = $acl;
+        $this->config = $config;
+
+        $this->tempPath = $basePath . '/tmp';
         $this->tempUrl = isset($_SERVER['HTTPS']) ? 'https' : 'http';
         $this->tempUrl .= '://' . $_SERVER['HTTP_HOST'] . $_SERVER['BASE'] . '/files/tmp';
         //$this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
@@ -39,9 +96,9 @@ class ScenarioViewHelper extends AbstractHelper
     /**
      * gestion des scenarios
      *
-     * @param Omeka\View\Helper\Params     $params
+     * @param \Omeka\View\Helper\Params     $params
      *
-     * @return json
+     * @return array
      */
     public function __invoke($params)
     {
@@ -133,7 +190,7 @@ class ScenarioViewHelper extends AbstractHelper
             //vérifie la présence de l'item pour ne pas la récréer inutilement
             $ref = 'allFragmentOf_' . $itemMedia->id();
             $param = [];
-            $param['property'][0]['property'] = $this->getProp('dcterms:isReferencedBy')->id() . "";
+            $param['property'][0]['property'] = (string) $this->getProp('dcterms:isReferencedBy')->id();
             $param['property'][0]['type'] = 'eq';
             $param['property'][0]['text'] = $ref;
             $exist = $this->api->search('items', $param)->getContent();
@@ -164,8 +221,14 @@ class ScenarioViewHelper extends AbstractHelper
         $medias = $this->api->search('media', $query)->getContent();
         $media = $medias[array_rand($medias)];
         $itemMedia = $media->item();
-        $itemFrag = ['ma:isFragmentOf' => $itemMedia->id(),'dcterms:title' => 'fragment aléatoire de : ' . $itemMedia->displayTitle()];
-        return ['media' => $media,'item' => $this->saveTrack($itemFrag, 'Fragment aléatoire')];
+        $itemFrag = [
+            'ma:isFragmentOf' => $itemMedia->id(),
+            'dcterms:title' => 'fragment aléatoire de : ' . $itemMedia->displayTitle(),
+        ];
+        return [
+            'media' => $media,
+            'item' => $this->saveTrack($itemFrag, 'Fragment aléatoire'),
+        ];
     }
 
     /**
@@ -177,7 +240,7 @@ class ScenarioViewHelper extends AbstractHelper
      */
     public function getAleaFrag($query)
     {
-        //récupère un média
+        // Récupère un média
         $query = [];
         $query['resource_class_id'] = $this->getRc('oa:FragmentSelector')->id();
         $query['sort_by'] = "random";
@@ -186,14 +249,18 @@ class ScenarioViewHelper extends AbstractHelper
         $query['per_page'] = "1";
         $item = $this->api->search('items', $query)->getContent()[0];
         $media = $item->media()[0];
-        //récupère le magic
+        // Récupère le magic
         $query = [];
         $query['resource_class_id'] = $this->getRc('lexinfo:PartOfSpeech')->id();
         $query['property'][0]['property'] = $this->getProp('oa:hasSource')->id();
         $query['property'][0]['type'] = 'res';
         $query['property'][0]['text'] = $item->id();
         $magic = $this->api->search('items', $query)->getContent()[0];
-        return ['media' => $media,'item' => $item,'magic' => $magic];
+        return [
+            'media' => $media,
+            'item' => $item,
+            'magic' => $magic,
+        ];
     }
 
     /**
@@ -238,7 +305,7 @@ class ScenarioViewHelper extends AbstractHelper
      */
     public function getWebVTT($numPos, $idSrc)
     {
-        //récupère la source de l'annotation pour accentuer les mots clefs
+        // Récupère la source de l'annotation pour accentuer les mots clefs
         //$src = $this->api->read('items',$idSrc)->getContent();
         //récupère les parties du discours
         $query['resource_class_id'] = $this->getRc('lexinfo:PartOfSpeech')->id();
@@ -291,12 +358,12 @@ class ScenarioViewHelper extends AbstractHelper
         if ($rs) {
             $rs = [];
             $s = $this->api->read('items', $idScenario)->getContent();
-            //boucle sur les relations
+            // Boucle sur les relations
             foreach ($post['layers'] as $k => $vals) {
                 if (isset($vals['rela'])) {
                     foreach ($vals['rela'] as $v) {
                         if (is_string($v)) {
-                            //creation de la catégorie
+                            // Creation de la catégorie
                             $oItem = [];
                             $oItem['o:resource_class'] = ['o:id' => $this->getRc($vals['c'])->id()];
                             $this->setValeur(date(DATE_ATOM), $this->getProp("dcterms:created"), $oItem);
@@ -305,7 +372,8 @@ class ScenarioViewHelper extends AbstractHelper
                         } else {
                             $cat = $this->api->read('items', $v['id'])->getContent();
                         }
-                        //vérifie si une track existe avec pour source cette catégorie et ce scénario
+                        // Vérifie si une track existe avec pour source cette catégorie et ce scénario
+                        $query = [];
                         $query['property'][0]['property'] = $this->getProp('genstory:hasScenario')->id();
                         $query['property'][0]['type'] = 'res';
                         $query['property'][0]['text'] = $idScenario;
@@ -342,7 +410,7 @@ class ScenarioViewHelper extends AbstractHelper
                                     $post['track']['category'] = $cat->displayTitle() . ' : ' . $crea->displayTitle();
                                     break;
                             }
-                            //création de la couche
+                            // Création de la couche
                             $post['track']['dcterms:title'] = $this->getRc($vals['c'])->label() . ' : ' . $cat->displayTitle();
                             $post['track']['oa:start'] = 0;
                             $post['track']['oa:end'] = 5;
@@ -350,9 +418,9 @@ class ScenarioViewHelper extends AbstractHelper
                             $post['track']['oa:hasSource'] = $cat->id();
                             $post['track'][$k] = $cat->id();
                             $rs[] = [
-                                'message' => 'La couche ' . $cat->displayTitle() . ' (' . $cat->id() . ') est crée dans ce scénario'
-                                ,'track' => $this->createTrack($post['track'])
-                                ,'cat' => $cat,
+                                'message' => 'La couche ' . $cat->displayTitle() . ' (' . $cat->id() . ') est crée dans ce scénario',
+                                'track' => $this->createTrack($post['track']),
+                                'cat' => $cat,
                             ];
                         }
                     }
@@ -360,7 +428,10 @@ class ScenarioViewHelper extends AbstractHelper
             }
             return $rs;
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de créer une couche."];
+            return [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de créer une couche.',
+            ];
         }
     }
 
@@ -373,7 +444,8 @@ class ScenarioViewHelper extends AbstractHelper
      */
     public function getScope($titre)
     {
-        //vérifie si le scope existe
+        // Vérifie si le scope existe
+        $query = [];
         $query['property'][0]['property'] = $this->getProp('dcterms:title')->id();
         $query['property'][0]['type'] = 'eq';
         $query['property'][0]['text'] = $titre;
@@ -457,14 +529,15 @@ class ScenarioViewHelper extends AbstractHelper
                 }
                 if (!$existe) {
                     $dataTrack = json_decode(json_encode($t), true);
-                    //vérifie si la ressource existe
+                    // Vérifie si la ressource existe
+                    $query = [];
                     $query['property'][0]['property'] = $this->getProp('dcterms:title')->id();
                     $query['property'][0]['type'] = 'eq';
                     $query['property'][0]['text'] = $titreTrack;
                     $query['resource_class_id'] = $this->getRc($catClass)->id();
                     $result = $this->api->search('items', $query)->getContent();
                     if (!count($result)) {
-                        //création de la resource
+                        // Création de la resource
                         $data = [
                             'o:resource_class' => ['o:id' => $query['resource_class_id']],
                             'dcterms:title' => [['@value' => $titreTrack,'type' => 'literal', 'property_id' => $query['property'][0]['property']]],
@@ -524,13 +597,18 @@ class ScenarioViewHelper extends AbstractHelper
     {
         $rs = $this->acl->userIsAllowed(null, 'delete');
         if ($rs) {
-            //supprime toutes les tracks de la couche
+            // Supprime toutes les tracks de la couche
             foreach ($post['ids'] as $id) {
                 $this->api->delete('items', $id);
             }
-            return ['message' => "Couche(s) supprimée(s)."];
+            return [
+                'message' => 'Couche(s) supprimée(s).',
+            ];
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de supprimer."];
+            return [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de supprimer.',
+            ];
         }
     }
 
@@ -546,9 +624,14 @@ class ScenarioViewHelper extends AbstractHelper
         $rs = $this->acl->userIsAllowed(null, 'delete');
         if ($rs) {
             $this->api->delete('items', $post['id']);
-            return ['message' => "Track supprimé."];
+            return [
+                'message' => "Track supprimé.",
+            ];
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de supprimer."];
+            return [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de supprimer.',
+            ];
         }
     }
 
@@ -566,7 +649,10 @@ class ScenarioViewHelper extends AbstractHelper
             $i = $this->saveTrack($post, isset($post['rt']) ? $post['rt'] : 'Indexation vidéo');
             return isset($post['getItem']) ? $i : $this->getTimelinerTrack($post, $i);
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de créer."];
+            return [
+                'error' => 'droits insuffisants',
+                'message' => 'Vous n’avez pas le droit de créer.',
+            ];
         }
     }
     /**
@@ -584,9 +670,9 @@ class ScenarioViewHelper extends AbstractHelper
         }
         $result[] = $this->createTimelinerEntry($post['idGroup'], $post['category'], $i);
         $result[] = [
-            "time" => (float) $post["oa:end"],
-            "value" => 1,
-            "idObj" => isset($post["idObj"]) ? $post["idObj"] : $i->id(),
+            'time' => (float) $post['oa:end'],
+            'value' => 1,
+            'idObj' => isset($post['idObj']) ? $post['idObj'] : $i->id(),
         ];
         return $result;
     }
@@ -621,8 +707,8 @@ class ScenarioViewHelper extends AbstractHelper
                 foreach ($rtp as $p) {
                     $oP = $p->property();
                     switch ($oP->term()) {
-                        case "dcterms:created":
-                        case "dcterms:modified":
+                        case 'dcterms:created':
+                        case 'dcterms:modified':
                             $this->setValeur(date(DATE_ATOM), $oP, $oItem);
                             break;
                         default:
@@ -646,7 +732,10 @@ class ScenarioViewHelper extends AbstractHelper
             }
             return $result;
         } else {
-            return ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de créer une catégorie."];
+            return [
+                'error' => "droits insuffisants",
+                'message' => "Vous n’avez pas le droit de créer une catégorie.",
+            ];
         }
     }
 
@@ -671,9 +760,14 @@ class ScenarioViewHelper extends AbstractHelper
                 $ids[] = $t->id();
             }
             $response = $this->api->batchDelete('items', $ids, [], ['continueOnError' => true]);
-            $result = ['message' => "Scenario supprimé."];
+            $result = [
+                'message' => "Scenario supprimé.",
+            ];
         } else {
-            $result = ['error' => "droits insuffisants",'message' => "Vous n'avez pas le droit de supprimer ce scenario."];
+            $result = [
+                'error' => "droits insuffisants",
+                'message' => "Vous n'avez pas le droit de supprimer ce scenario.",
+            ];
         }
         return $result;
     }
@@ -687,16 +781,16 @@ class ScenarioViewHelper extends AbstractHelper
      */
     public function createRelations($params)
     {
-        //récupère l'item
+        // Récupère l'item
         $item = $this->api->read('items', $params['idItem'])->getContent();
-        //récupère la définition du resource_template
+        // Récupère la définition du resource_template
         $rt = $item->resourceTemplate();
 
         $dataItem = json_decode(json_encode($item), true);
         $update = false;
-        //boucle sur les propriétés à prendre en compte
+        // Boucle sur les propriétés à prendre en compte
         foreach ($params['props'] as $p) {
-            //vérifie les valeurs de la propriété pour l'item
+            // Vérifie les valeurs de la propriété pour l'item
             $vals = $item->value($p, ['all' => true]);
             foreach ($vals as $i => $v) {
                 $term = 'relation';
@@ -708,10 +802,11 @@ class ScenarioViewHelper extends AbstractHelper
                     $rc = $this->getRc($term);
                     $data['o:resource_class'] = ['o:id' => $rc->id()];
                 }
-                //si la valeur n'est pas une ressource on la crée
+                // Si la valeur n'est pas une ressource on la crée
                 if ($v->type() == 'literal') {
-                    //vérifie l'existence de l'item
+                    // Vérifie l'existence de l'item
                     $pRef = $this->getProp('dcterms:isReferencedBy');
+                    $query = [];
                     $query['property'][0]['property'] = $pRef->id();
                     $query['property'][0]['type'] = 'eq';
                     $query['property'][0]['text'] = md5($term . $v->__toString());
@@ -817,6 +912,7 @@ class ScenarioViewHelper extends AbstractHelper
         }
         return $result;
     }
+
     /**
      * Renvoie les indexations pour un scenario
      *
@@ -828,11 +924,16 @@ class ScenarioViewHelper extends AbstractHelper
     {
         //récupère tous les indexations d'un scénario
         $item = $this->api->read('items', $idItem)->getContent();
-        $results = ['oa:hasBody' => [],'oa:hasSource' => [],'oa:hasTarget' => []];
+        $results = [
+            'oa:hasBody' => [],
+            'oa:hasSource' => [],
+            'oa:hasTarget' => [],
+        ];
         foreach ($results as $k => $v) {
             $vals = $item->value($k, ['all' => true]);
             foreach ($vals as $v) {
-                $this->api->update('items', $item->id(), $dataItem, [], ['continueOnError' => true,'isPartial' => 1, 'collectionAction' => 'replace']);
+                // FIXME ?
+                $this->api->update('items', $item->id(), $dataItem, [], ['continueOnError' => true, 'isPartial' => 1, 'collectionAction' => 'replace']);
             }
         }
         return $results;
@@ -843,13 +944,13 @@ class ScenarioViewHelper extends AbstractHelper
      *
      * @param int       $idItem
      *
-     * @return json
+     * @return array
      */
     public function getScenarios($idItem)
     {
-        //mis à jour du scenario global de l'item = toutes les annnotations
+        // Mis à jour du scenario global de l'item = toutes les annnotations
         $this->createScenario($this->genScenario(['idItem' => $idItem,'type' => 'global']));
-        //récupère tous les scénario pour l'item
+        // Récupère tous les scénario pour l'item
         $rt = $this->api->search('resource_templates', ['label' => 'Scénario Timeliner'])->getContent()[0];
         $query["resource_template_id"] = $rt->id();
         $p = $this->api->search('properties', ['term' => 'oa:hasSource'])->getContent()[0];
@@ -1047,7 +1148,7 @@ class ScenarioViewHelper extends AbstractHelper
             $scenario['layers'][] = $layer;
             $idLayer++;
         }
-        //IMPORTANT triage des entrées pour bien afficher le détail des tracks
+        // IMPORTANT triage des entrées pour bien afficher le détail des tracks
         $nb = count($scenario['layers']);
         for ($i = 0; $i < $nb; $i++) {
             $l = $scenario['layers'][$i];
@@ -1058,7 +1159,7 @@ class ScenarioViewHelper extends AbstractHelper
                 }
                 return ($a["time"] < $b["time"]) ? -1 : 1;
             });
-            //ajoute les layers de fin après le tri
+            // Ajoute les layers de fin après le tri
             $vals = [];
             foreach ($trivals as $v) {
                 $vals[] = $v;
@@ -1071,11 +1172,11 @@ class ScenarioViewHelper extends AbstractHelper
                     $totalTime = $v["timeEnd"];
                 }
             }
-            //met à jour le scénario
+            // Met à jour le scénario
             $scenario['layers'][$i]['values'] = $vals;
         }
 
-        //mise à jour des temporalités globales
+        // Mise à jour des temporalités globales
         $scenario['ui']['currentTime'] = $totalTime == 0 ? 0 : $debTime;
         $scenario['ui']['totalTime'] = $totalTime == 0 ? 60 : $totalTime;
         $scenario['ui']['scrollTime'] = $totalTime == 0 ? 0 : $debTime;
@@ -1090,7 +1191,7 @@ class ScenarioViewHelper extends AbstractHelper
      * @param string    $category
      * @param o:Item    $i
      *
-     * @return json
+     * @return array
      */
     public function createTimelinerEntry($idGroup, $category, $i)
     {
@@ -1132,15 +1233,15 @@ class ScenarioViewHelper extends AbstractHelper
             "ordre" => $i->value('genstory:ordre') ? $i->value('genstory:ordre')->__toString() : 1,
             "tween" => "linear",
         ];
-        //ajoute la catégorie
+        // Ajoute la catégorie
         if ($i->value('schema:category')) {
             $l["idCat"] = $i->value('schema:category')->valueResource()->id();
         }
-        //ajoute les infos des ressources
+        // Ajoute les infos des ressources
         foreach ($this->propsValueRessource as $p) {
             $this->addRessourceInfos($p, $i, $l);
         }
-        //ajoute les médias
+        // Ajoute les médias
         $medias = $i->media();
         if ($medias) {
             $l["medias"] = $medias;
@@ -1199,7 +1300,7 @@ class ScenarioViewHelper extends AbstractHelper
      *
      * @param array     $data
      *
-     * @return json
+     * @return array
      */
     public function createScenario($data)
     {
@@ -1256,10 +1357,10 @@ class ScenarioViewHelper extends AbstractHelper
             }
         }
 
-        //attachement du fichier json
+        // Attachement du fichier json
         $this->jsonAttachment($oItem, $data['scenario']);
 
-        //vérifie la mise à jour
+        // Vérifie la mise à jour
         if ($data['scenario']['idScenario']) {
             $oItem['dcterms:created'][0]['@value'] = $data['scenario']['dateCreation'];
             //ajoute les médias existant sauf : 'json file for timeliner'
@@ -1273,7 +1374,7 @@ class ScenarioViewHelper extends AbstractHelper
             $result = $this->api->read('items', $data['scenario']['idScenario'])->getContent();
         } else {
             $result = $this->api->create('items', $oItem, [], ['continueOnError' => true])->getContent();
-            //mise à jour des tracks avec l'identifiant du scenario
+            // Mise à jour des tracks avec l'identifiant du scenario
             $dt = [];
             $this->setValeur([['id' => $result->id()]], $this->getProp('genstory:hasScenario'), $dt);
             foreach ($data['bodies'] as $b) {
@@ -1282,7 +1383,7 @@ class ScenarioViewHelper extends AbstractHelper
             //$response = $this->api->batchUpdate('items',$ids, $dt, [], ['isPartial'=>1,'collectionAction' => 'append']);
         }
 
-        //suppression du fichier temporaire
+        // Suppression du fichier temporaire
         unlink($this->temp);
         return $result;
     }
@@ -1295,14 +1396,14 @@ class ScenarioViewHelper extends AbstractHelper
        */
       protected function jsonAttachment(&$oItem, $data): void
       {
-          //creation du fichier temporaire
+          // Creation du fichier temporaire
           $p = uniqid() . '.json';
           $this->temp = $this->tempPath . '/' . $p;
           $f = fopen($this->temp, 'w');
           fwrite($f, json_encode($data));
           fclose($f);
           $url = $this->tempUrl . '/' . $p;
-          //ATTENTION sur JDC il faut utiliser l'IP
+          // ATTENTION sur JDC il faut utiliser l'IP
           $property = $this->getProp('dcterms:title');
           $oItem['o:media'][] = [
               'o:ingester' => 'url',
@@ -1412,7 +1513,7 @@ class ScenarioViewHelper extends AbstractHelper
     {
         $result = [];
         foreach ($data as $item) {
-            //construction de la clef
+            // Construction de la clef
             $cate = $item->value('schema:category')->valueResource();
             $crea = $item->value('dcterms:creator')->valueResource();
 
@@ -1440,7 +1541,7 @@ class ScenarioViewHelper extends AbstractHelper
     {
         $result = [];
         foreach ($data as $item) {
-            //construction de la clef
+            // Construction de la clef
             $source = $item->value('oa:hasSource')->valueResource();
             $target = $item->value('oa:hasTarget')->valueResource();
             $rc = $target->resourceClass();
@@ -1469,7 +1570,7 @@ class ScenarioViewHelper extends AbstractHelper
     {
         $result = [];
         foreach ($data as $item) {
-            //construction de la clef
+            // Construction de la clef
             $source = $item->value('oa:hasSource')->valueResource();
             $body = $item->value('oa:hasBody')->valueResource();
             $rc = $body->resourceClass();
@@ -1497,7 +1598,7 @@ class ScenarioViewHelper extends AbstractHelper
     {
         $result = [];
         foreach ($data as $item) {
-            //construction de la clef
+            // Construction de la clef
             $source = $item->value('oa:hasSource')->valueResource();
             $scopeId = $item->value('oa:hasScope') ? $item->value('oa:hasScope')->valueResource()->id() : 0;
             $rc = $source->resourceClass();
@@ -1517,7 +1618,8 @@ class ScenarioViewHelper extends AbstractHelper
         return $result;
     }
 
-    //fonctions utilitaires géénriques
+    // Fonctions utilitaires génériques
+
     public function aleaColor($alpha = "0.5")
     {
         //return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);

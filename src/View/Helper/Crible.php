@@ -1,14 +1,24 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
+use Doctrine\DBAL\Connection;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
 
-class CribleViewHelper extends AbstractHelper
+class Crible extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Connection
+     */
     protected $conn;
 
-    public function __construct($api, $conn)
+    public function __construct(ApiManager $api, Connection $conn)
     {
         $this->api = $api;
         $this->conn = $conn;
@@ -18,7 +28,7 @@ class CribleViewHelper extends AbstractHelper
      * Construction des cribles et des concepts.
      *
      * @param string    $nom nom du crible à récupérer
-     * @param oItem     $crible item du crible
+     * @param ItemRepresentation     $crible item du crible
      * @param string    $action action à faire avec le crible
      * @param array     $params paramètre de l'action
      * @return array
@@ -66,7 +76,7 @@ class CribleViewHelper extends AbstractHelper
      */
     public function getProcessCribleValue($params)
     {
-        $query = "SELECT 
+        $query = "SELECT
             actionApplication,
             GROUP_CONCAT(cribleNom) cribles,
             GROUP_CONCAT(crible) criblesId,
@@ -74,7 +84,7 @@ class CribleViewHelper extends AbstractHelper
             GROUP_CONCAT(DISTINCT actant) actants,
             GROUP_CONCAT(DISTINCT doc) docs
         FROM
-            (SELECT 
+            (SELECT
             r.id,
             vProcess.value_resource_id actionApplication,
             vCrible.value_resource_id crible,
@@ -110,7 +120,7 @@ class CribleViewHelper extends AbstractHelper
         GROUP BY actionApplication , crible) cribleVals
         GROUP BY actionApplication";
         $rs = $this->conn->fetchAll($query, $params);
-        //formate les données
+        // Formate les données
         $result = [];
         foreach ($rs as $r) {
             $cribles = explode(",", $r['cribles']);
@@ -136,7 +146,7 @@ class CribleViewHelper extends AbstractHelper
      */
     public function getCorCribleValue($params)
     {
-        $query = "SELECT 
+        $query = "SELECT
         DISTINCT
         r.id,
         vProcess.value_resource_id actionApplication,
@@ -184,12 +194,19 @@ class CribleViewHelper extends AbstractHelper
     WHERE
         r.resource_template_id = ?";
         $rs = $this->conn->fetchAll($query, $params);
-        //formate les données
+        // Formate les données
         $result = [];
         foreach ($rs as $r) {
-            $row = ['process' => $r['actionApplication'],'docs' => $r['doc'],'actants' => $r['actant']
-                ,'cptOriId' => $r['cpt'],'cptOri' => $r['cptNom'],'cptOriVal' => 1//par defaut la valeur calculée est à 1
-                ,'cptId' => $r['distCpt'], 'cpt' => $r['distCptNom'], 'cptVal' => $r['rates'],
+            $row = [
+                'process' => $r['actionApplication'],
+                'docs' => $r['doc'],
+                'actants' => $r['actant'],
+                'cptOriId' => $r['cpt'],
+                'cptOri' => $r['cptNom'],
+                'cptOriVal' => 1, // Par defaut la valeur calculée est à 1
+                'cptId' => $r['distCpt'],
+                'cpt' => $r['distCptNom'],
+                'cptVal' => $r['rates'],
             ];
             $result[] = $row;
         }
@@ -200,14 +217,14 @@ class CribleViewHelper extends AbstractHelper
     {
         $result = [];
         foreach ($cribles as $c) {
-            //récupère la liste des concepts
+            // Récupère la liste des concepts
             $cpts = [];
             $param = [];
-            $param['property'][0]['property'] = $this->inScheme->id() . "";
+            $param['property'][0]['property'] = (string) $this->inScheme->id();
             $param['property'][0]['type'] = 'res';
-            $param['property'][0]['text'] = $c->id() . "";
-            $param['sort_by'] = "jdc:ordreCrible";
-            $param['sort_order'] = "asc";
+            $param['property'][0]['text'] = (string) $c->id();
+            $param['sort_by'] = 'jdc:ordreCrible';
+            $param['sort_order'] = 'asc';
             $concepts = $this->api->search('items', $param)->getContent();
             foreach ($concepts as $cpt) {
                 //TODO: rendre accessible la propriété concepts qui disparait lors du json encode
@@ -215,7 +232,7 @@ class CribleViewHelper extends AbstractHelper
                 $cpts[] = $cpt;
             }
 
-            //récupère la définition des cartos
+            // Récupère la définition des cartos
             $cartos = [];
             $hasCribleCarto = $c->value('jdc:hasCribleCarto', ['all' => true]);
             if ($hasCribleCarto) {
@@ -223,7 +240,7 @@ class CribleViewHelper extends AbstractHelper
                     $cartos[] = $carto->valueResource();
                 }
             }
-            //récupère les cribles liés au crible
+            // Récupère les cribles liés au crible
             $linkCribles = [];
             $hasCrible = $c->value('jdc:hasCrible', ['all' => true]);
             if ($hasCrible) {
@@ -231,7 +248,12 @@ class CribleViewHelper extends AbstractHelper
                     $linkCribles[] = $this->getInfosCribles([$hc->valueResource()]);
                 }
             }
-            $result[] = ['item' => $c,'concepts' => $cpts,'cartos' => $cartos,'cribles' => $linkCribles];
+            $result[] = [
+                'item' => $c,
+                'concepts' => $cpts,
+                'cartos' => $cartos,
+                'cribles' => $linkCribles,
+            ];
         }
         return count($result) == 1 ? $result[0] : $result;
     }

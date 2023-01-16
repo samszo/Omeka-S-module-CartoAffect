@@ -1,14 +1,24 @@
 <?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
+use Doctrine\DBAL\Connection;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
 
-class QuerySqlViewHelper extends AbstractHelper
+class QuerySql extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Connection
+     */
     protected $conn;
 
-    public function __construct($api, $conn)
+    public function __construct(ApiManager $api, Connection $conn)
     {
         $this->api = $api;
         $this->conn = $conn;
@@ -55,11 +65,11 @@ class QuerySqlViewHelper extends AbstractHelper
     public function tagUses($params)
     {
         //récupère le descriptif des usages = le tag utilisé comme valueResource
-        $query = "SELECT 
+        $query = "SELECT
                 r.id tagId,
                 r.title tagTitle,
                 p.local_name relation,
-                v.resource_id useId,                
+                v.resource_id useId,
                 rc.label useClass
             FROM
                 resource r
@@ -72,8 +82,8 @@ class QuerySqlViewHelper extends AbstractHelper
                     INNER JOIN
                 resource_class rc ON rc.id = rU.resource_class_id
             WHERE
-                        r.title like '%" . $params['search'] . "%' 
-                        AND (p.local_name = 'hasConcept' OR p.local_name = 'semanticRelation') 
+                        r.title like '%" . $params['search'] . "%'
+                        AND (p.local_name = 'hasConcept' OR p.local_name = 'semanticRelation')
                     ";
         //GROUP BY r.id, p.local_name ";
         $query .= " ORDER BY r.created";
@@ -112,7 +122,7 @@ class QuerySqlViewHelper extends AbstractHelper
         , vConf.id, vConf.value confidence
         , vSpeak.id, vSpeak.value speaker
         FROM (
-        SELECT 
+        SELECT
             count(v.value_resource_id),
             count(v.value),
             min(v.id) idMin,
@@ -120,9 +130,9 @@ class QuerySqlViewHelper extends AbstractHelper
             max(v.id)-min(v.id) nb,
             v.property_id pId,
             p.label pLabel,
-            min(vC.id) - min(v.id) numVal 
-        FROM        
-            value v 
+            min(vC.id) - min(v.id) numVal
+        FROM
+            value v
             inner join property p on p.id = v.property_id
             left join value vC on vC.id = v.id and v.property_id = 2068 and v.value_resource_id = " . $idT . "
         WHERE
@@ -134,7 +144,7 @@ class QuerySqlViewHelper extends AbstractHelper
          (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 189) vEnd,
          (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 2043) vConf,
          (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 2082) vSpeak
-        WHERE 
+        WHERE
         vStart.id = trans.idMin+(nb+1)+numVal
         AND vEnd.id = trans.idMin+((nb+1)*2)+numVal
         AND vConf.id = trans.idMin+((nb+1)*3)+numVal
@@ -152,7 +162,7 @@ class QuerySqlViewHelper extends AbstractHelper
     public function statValueResourceClass($params)
     {
         $oClass = $this->api->search('resource_classes', ['term' => $params['class']])->getContent()[0];
-        $query = "SELECT 
+        $query = "SELECT
             r.id,
             r.title,
             COUNT(v.id) nbValue,
@@ -187,7 +197,7 @@ class QuerySqlViewHelper extends AbstractHelper
      */
     public function cooccurrenceValueResource($params)
     {
-        $query = "SELECT 
+        $query = "SELECT
                 rlr.title, rlr.id, COUNT(vl.id) nbValue
                 ,GROUP_CONCAT(DISTINCT v.resource_id) idsR
             FROM
@@ -218,7 +228,7 @@ class QuerySqlViewHelper extends AbstractHelper
      */
     public function statResourceTemplate($id)
     {
-        $query = "SELECT 
+        $query = "SELECT
                     COUNT(DISTINCT r.id) nbRes,
                     p.local_name, p.label,
                     p.id pId,
@@ -248,7 +258,7 @@ class QuerySqlViewHelper extends AbstractHelper
      */
     public function getDistinctPropertyVal($idRT, $idP)
     {
-        $query = "SELECT 
+        $query = "SELECT
                 p.local_name,
                 p.id,
                 COUNT(DISTINCT r.id) nb,
@@ -266,7 +276,7 @@ class QuerySqlViewHelper extends AbstractHelper
             WHERE
                 r.resource_template_id = ?
                     AND p.id = ?
-            GROUP BY v.value , value_resource_id    
+            GROUP BY v.value , value_resource_id
              ";
         $rs = $this->conn->fetchAll($query, [$idRT, $idP]);
         return $rs;
