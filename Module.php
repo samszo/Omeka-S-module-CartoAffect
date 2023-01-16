@@ -23,6 +23,7 @@ class Module extends AbstractModule
     const NAMESPACE = __NAMESPACE__;
 
     public $rsVocabularies = [
+        ['prefix' => 'arcanes', 'label' => 'Arcanes'],
         ['prefix' => 'cito', 'label' => 'Gestion des citations'],
         ['prefix' => 'genex', 'label' => "Générateur d'expressions"],
         ['prefix' => 'geom', 'label' => 'IGN geometry'],
@@ -30,22 +31,30 @@ class Module extends AbstractModule
         ['prefix' => 'lexinfo', 'label' => 'LexInfo'],
         ['prefix' => 'ma', 'label' => 'Ontology for Media Resources'],
         ['prefix' => 'plmk', 'label' => 'Polemika'],
-        ['prefix' => 'skos', 'label' => 'SKOS'],
         ['prefix' => 'schema', 'label' => 'schema.org'],
+        ['prefix' => 'skos', 'label' => 'SKOS'],
     ];
 
     public $rsRessourceTemplate = [
+        'Actant',
         'Cartographie sémantique',
-        'Rapports entre concepts',
         'Concept dans crible',
         'Crible',
-        'Rapports entre concepts',
-        'Position sémantique : sonar',
-        'Position sémantique',
-        'Actant',
+        'Fragment aléatoire',
+        'Histoire',
+        'Indexation vidéo',
+        'Position étoile',
+        'Position sémantique : corrections',
         'Position sémantique : Geneva Emotion corrections',
         'Position sémantique : Geneva Emotion',
+        'Position sémantique : sonar',
+        'Position sémantique',
         'Processus CartoAffect',
+        'Rapports entre concepts',
+        'Scénario event',
+        'Scénario Timeliner',
+        'Scénario track',
+        'Scénario',
     ];
 
     public function getConfig()
