@@ -22,6 +22,14 @@ class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
+    protected $dependencies = [
+        'Generic',
+        'Annotate',
+        'ValueSuggest',
+        'Generateur',
+        'CmapImport',
+    ];
+
     public $rsVocabularies = [
         ['prefix' => 'arcanes', 'label' => 'Arcanes'],
         ['prefix' => 'cito', 'label' => 'Gestion des citations'],
@@ -62,45 +70,27 @@ class Module extends AbstractModule
         return include __DIR__ . '/config/module.config.php';
     }
 
-    protected function preInstall():void
+    protected function preInstall(): void
     {
-        //vérifie les dépendances
+        $modules = [
+            'Generic' => '3.0.18',
+            'Annotate' => '3.1.2',
+            'ValueSuggest' => '1.5.0',
+            'Generateur' => '3.0.3-alpha',
+            'CmapImport' => '0.0.2',
+        ];
         $services = $this->getServiceLocator();
-        $module = $services->get('Omeka\ModuleManager')->getModule('Generic');
-        if ($module && version_compare($module->getIni('version'), '3.0.18', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Generic', '3.0.18'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-        $module = $services->get('Omeka\ModuleManager')->getModule('Annotate');
-        if ($module && version_compare($module->getIni('version'), '3.1.2', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Annotate', '3.1.2'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-        $module = $services->get('Omeka\ModuleManager')->getModule('ValueSuggest');
-        if ($module && version_compare($module->getIni('version'), '1.5.0', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'ValueSuggest', '1.5.0'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-        $module = $services->get('Omeka\ModuleManager')->getModule('Generateur');
-        if ($module && version_compare($module->getIni('version'), '3.0.3-alpha', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Generateur', '3.0.3-alpha'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $translator = $services->get('MvcTranslator');
+        foreach ($modules as $moduleName => $minVersion) {
+            $module = $moduleManager->getModule($moduleName);
+            if ($module && version_compare($module->getIni('version'), $minVersion, '<')) {
+                $message = new \Omeka\Stdlib\Message(
+                    $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+                    $moduleName, $minVersion
+                );
+                throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
+            }
         }
     }
 
