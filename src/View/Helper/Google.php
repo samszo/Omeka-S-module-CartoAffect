@@ -134,6 +134,7 @@ class Google extends AbstractHelper
                 ];
             }
         }
+        return $result;
     }
 
     /**
