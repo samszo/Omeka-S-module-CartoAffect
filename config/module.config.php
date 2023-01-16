@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 namespace CartoAffect;
 
 return [
-    
+
     'view_helpers' => [
-        
+
         'invokables' => [
             'CartoAffectViewHelper' => View\Helper\CartoAffectViewHelper::class,
             'CribleViewHelper' => View\Helper\CribleViewHelper::class,
@@ -15,8 +15,8 @@ return [
             'GoogleViewHelper' => View\Helper\GoogleViewHelper::class,
             'CartoHexaViewHelper' => View\Helper\CartoHexaViewHelper::class,
         ],
-                
-        'factories'  => [
+
+        'factories' => [
             'CartoAffectFactory' => Service\ViewHelper\CartoAffectFactory::class,
             'CribleFactory' => Service\ViewHelper\CribleFactory::class,
             'EntityRelationFactory' => Service\ViewHelper\EntityRelationFactory::class,
@@ -24,7 +24,7 @@ return [
             'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
             'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
             'GoogleFactory' => Service\ViewHelper\GoogleFactory::class,
-            'CartoHexaFactory' => Service\ViewHelper\CartoHexaFactory::class
+            'CartoHexaFactory' => Service\ViewHelper\CartoHexaFactory::class,
         ],
 
     ],
@@ -37,9 +37,8 @@ return [
         'config' => [
             'cartoaffect_mail' => 'anonyme.cartoaffect@univ-paris8.fr',
             'cartoaffect_pwd' => 'anonyme',
-            'ajouteAnnotation'=> 1
+            'ajouteAnnotation' => 1,
         ],
     ],
-
 
 ];

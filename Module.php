@@ -1,11 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * CartoAffect
  *
  * Module pour cartographier les affects
  *
  * @copyright Samuel Szoniecky, 2020
-
  */
 namespace CartoAffect;
 
@@ -15,43 +14,39 @@ if (!class_exists(\Generic\AbstractModule::class)) {
         : __DIR__ . '/src/Generic/AbstractModule.php';
 }
 
+use Generic\AbstractModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
-use Laminas\ServiceManager\ServiceLocatorInterface;
-use Laminas\ModuleManager\ModuleManager;
-use Generic\AbstractModule;
-
 
 class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
-   
-    var $rsVocabularies = [
-        ['prefix'=>'cito','label'=>'Gestion des citations']
-        ,['prefix'=>'genex','label'=>"Générateur d'expressions"]
-        ,['prefix'=>'geom','label'=>'IGN geometry']
-        ,['prefix'=>'jdc','label'=>'Jardin des connaissances']
-        ,['prefix'=>'lexinfo','label'=>'LexInfo']
-        ,['prefix'=>'ma','label'=>'Ontology for Media Resources']
-        ,['prefix'=>'plmk','label'=>'Polemika']
-        ,['prefix'=>'skos','label'=>'SKOS']
-        ,['prefix'=>'schema','label'=>'schema.org']
+
+    public $rsVocabularies = [
+        ['prefix' => 'cito', 'label' => 'Gestion des citations'],
+        ['prefix' => 'genex', 'label' => "Générateur d'expressions"],
+        ['prefix' => 'geom', 'label' => 'IGN geometry'],
+        ['prefix' => 'jdc', 'label' => 'Jardin des connaissances'],
+        ['prefix' => 'lexinfo', 'label' => 'LexInfo'],
+        ['prefix' => 'ma', 'label' => 'Ontology for Media Resources'],
+        ['prefix' => 'plmk', 'label' => 'Polemika'],
+        ['prefix' => 'skos', 'label' => 'SKOS'],
+        ['prefix' => 'schema', 'label' => 'schema.org'],
     ];
 
-    var $rsRessourceTemplate = [
-        'Cartographie sémantique'
-        ,'Rapports entre concepts'
-        ,'Concept dans crible'
-        ,'Crible'
-        ,'Rapports entre concepts'
-        ,'Position sémantique : sonar'
-        ,'Position sémantique'
-        ,'Actant'
-        ,'Position sémantique : Geneva Emotion corrections'
-        ,'Position sémantique : Geneva Emotion'
-        ,'Processus CartoAffect'
+    public $rsRessourceTemplate = [
+        'Cartographie sémantique',
+        'Rapports entre concepts',
+        'Concept dans crible',
+        'Crible',
+        'Rapports entre concepts',
+        'Position sémantique : sonar',
+        'Position sémantique',
+        'Actant',
+        'Position sémantique : Geneva Emotion corrections',
+        'Position sémantique : Geneva Emotion',
+        'Processus CartoAffect',
     ];
-
 
     public function getConfig()
     {
@@ -98,10 +93,7 @@ class Module extends AbstractModule
             );
             throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
         }
-
-
     }
-
 
     protected function postUninstall():void
     {
@@ -125,14 +117,13 @@ class Module extends AbstractModule
         if (!empty($_POST['remove-template'])) {
             foreach ($this->rsRessourceTemplate as $r) {
                 $installResources->removeResourceTemplate($r);
-            }            
+            }
         }
 
-        //parent::uninstall($services);   
-
+        //parent::uninstall($services);
     }
 
-    public function warnUninstall(Event $event)
+    public function warnUninstall(Event $event): void
     {
         $view = $event->getTarget();
         $module = $view->vars()->module;
@@ -159,10 +150,9 @@ class Module extends AbstractModule
         $html .= '<label><input name="remove-vocabulary" type="checkbox" form="confirmform">';
         $html .= $t->translate('Remove the vocabularies :<br/>'); // @translate
         foreach ($this->rsVocabularies as $v) {
-            $html .= '"'.$v['label'].'"<br/>'; // @translate
+            $html .= '"' . $v['label'] . '"<br/>'; // @translate
         }
         $html .= '</label>';
-
 
         $html .= '<p>';
         $html .= $t->translate('If checked, the resource templates will be removed too. The resource template of the resources that use it will be reset.'); // @translate
@@ -170,14 +160,14 @@ class Module extends AbstractModule
         $html .= '<label><input name="remove-template" type="checkbox" form="confirmform">';
         $html .= $t->translate('Remove the resource templates :<br/>'); // @translate
         foreach ($this->rsRessourceTemplate as $rt) {
-            $html .= '"'.$rt.'"<br/>'; // @translate
+            $html .= '"' . $rt . '"<br/>'; // @translate
         }
         $html .= '</label>';
 
         echo $html;
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         // Display a warn before uninstalling.
         $sharedEventManager->attach(
@@ -185,8 +175,5 @@ class Module extends AbstractModule
             'view.details',
             [$this, 'warnUninstall']
         );
-
-
     }
 }
-

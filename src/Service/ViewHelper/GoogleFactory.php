@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 namespace CartoAffect\Service\ViewHelper;
 
+use CartoAffect\View\Helper\GoogleViewHelper;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use CartoAffect\View\Helper\GoogleViewHelper;
 
 class GoogleFactory implements FactoryInterface
 {
@@ -14,6 +14,6 @@ class GoogleFactory implements FactoryInterface
         $config = $services->get('Config');
         $logger = $services->get('Omeka\Logger');
 
-        return new GoogleViewHelper($api, $acl, $config,$logger);
+        return new GoogleViewHelper($api, $acl, $config, $logger);
     }
 }

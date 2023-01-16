@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace CartoAffect\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
@@ -12,8 +12,8 @@ class EntityRelationViewHelper extends AbstractHelper
 
     public function __construct($api, $conn)
     {
-      $this->api = $api;
-      $this->conn = $conn;
+        $this->api = $api;
+        $this->conn = $conn;
     }
 
     /**
@@ -23,18 +23,19 @@ class EntityRelationViewHelper extends AbstractHelper
      * @param array     $params paramètre de l'action
      * @return array
      */
-    public function __invoke($action="",$params=[])
+    public function __invoke($action = "", $params = [])
     {
-        if(!$action || !$params)return [];
+        if (!$action || !$params) {
+            return [];
+        }
 
         switch ($action) {
             case 'updatePosition':
                 $result = $this->updatePosition($params);
-                break;            
+                break;
         }
 
         return $result;
-
     }
 
     /**
@@ -43,7 +44,8 @@ class EntityRelationViewHelper extends AbstractHelper
      * @param array     $params paramètre de l'action
      * @return array
      */
-    function updatePosition($params){
+    public function updatePosition($params)
+    {
         $errorStore = new ErrorStore;
 
         $result = [];
@@ -52,13 +54,12 @@ class EntityRelationViewHelper extends AbstractHelper
                 $resource = $this->api->read('items', $value[0])->getContent();
                 $currentData = json_decode(json_encode($resource), true);
                 //construstion des valeurs
-                $currentData['geom:coordX'][0]['@value']=$value[1];
-                $currentData['geom:coordY'][0]['@value']=$value[2];
+                $currentData['geom:coordX'][0]['@value'] = $value[1];
+                $currentData['geom:coordY'][0]['@value'] = $value[2];
 
                 // mise a jour x & y de id item
                 try {
-                    $this->api->update('items', $value[0], $currentData, []
-                        , ['isPartial'=>true, 'continueOnError' => true, 'collectionAction' => 'replace']);
+                    $this->api->update('items', $value[0], $currentData, [], ['isPartial' => true, 'continueOnError' => true, 'collectionAction' => 'replace']);
                     $result['success'][] = json_encode($currentData);
                 } catch (Exception\ValidationException $e) {
                     $errorStore->mergeErrors($e->getErrorStore(), json_encode($currentData));
@@ -66,7 +67,6 @@ class EntityRelationViewHelper extends AbstractHelper
             }
         }
 
-        return $result;       
+        return $result;
     }
-
 }

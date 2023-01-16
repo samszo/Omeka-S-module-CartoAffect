@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 namespace CartoAffect\Service\ViewHelper;
 
+use CartoAffect\View\Helper\CribleViewHelper;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use CartoAffect\View\Helper\CribleViewHelper;
 
 class CribleFactory implements FactoryInterface
 {

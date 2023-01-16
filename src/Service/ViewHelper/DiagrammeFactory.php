@@ -1,9 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 namespace CartoAffect\Service\ViewHelper;
 
+use CartoAffect\View\Helper\DiagrammeViewHelper;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use CartoAffect\View\Helper\DiagrammeViewHelper;
 
 class DiagrammeFactory implements FactoryInterface
 {
@@ -14,6 +14,6 @@ class DiagrammeFactory implements FactoryInterface
         $serverUrlHelper = $helpers->get('ServerUrl');
         $acl = $services->get('Omeka\Acl');
         $em = $services->get('Omeka\EntityManager');
-        return new DiagrammeViewHelper($api, $serverUrlHelper,$acl,$em);
+        return new DiagrammeViewHelper($api, $serverUrlHelper, $acl, $em);
     }
 }
