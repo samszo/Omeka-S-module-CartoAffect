@@ -79,7 +79,7 @@ class CartoAffectViewHelper extends AbstractHelper
             }
         }
         //vérifie s'il faut déconnecter annonyme
-        if (isset($data['user']) && $data['user']->getEmail() == $this->config['CartoAffect']['config']['cartoaffect_mail']) {
+        if (isset($data['user']) && $data['user']->getEmail() == $this->config['cartoaffect']['config']['cartoaffect_mail']) {
             $this->auth->clearIdentity();
         }
 
@@ -272,10 +272,10 @@ class CartoAffectViewHelper extends AbstractHelper
     protected function getActantAnonyme()
     {
         $adapter = $this->auth->getAdapter();
-        $adapter->setIdentity($this->config['CartoAffect']['config']['cartoaffect_mail']);
-        $adapter->setCredential($this->config['CartoAffect']['config']['cartoaffect_pwd']);
+        $adapter->setIdentity($this->config['cartoaffect']['config']['cartoaffect_mail']);
+        $adapter->setCredential($this->config['cartoaffect']['config']['cartoaffect_pwd']);
         $user = $this->auth->authenticate()->getIdentity();
-        return $this->api->read('users', ['email' => $this->config['CartoAffect']['config']['cartoaffect_mail']])->getContent();
+        return $this->api->read('users', ['email' => $this->config['cartoaffect']['config']['cartoaffect_mail']])->getContent();
     }
 
     /** Ajoute un actant
@@ -350,7 +350,7 @@ class CartoAffectViewHelper extends AbstractHelper
      */
     protected function ajouteAnnotation($data)
     {
-        if (!$this->config['CartoAffect']['config']['ajouteAnnotation']) {
+        if (!$this->config['cartoaffect']['config']['ajouteAnnotation']) {
             return;
         }
 
