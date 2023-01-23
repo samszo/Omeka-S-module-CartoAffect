@@ -73,7 +73,7 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $modules = [
-            'Generic' => '3.0.18',
+            'Generic' => '3.4.43',
             'Annotate' => '3.1.2',
             'ValueSuggest' => '1.5.0',
             'Generateur' => '3.0.3-alpha',
