@@ -254,22 +254,22 @@ class Google extends AbstractHelper
             ];
             $oItem['oa:start'][] = [
                 'property_id' => $this->getProp('oa:start')->id(),
-                '@value' => $w->getStartTime()->getSeconds() . ":" . $w->getStartTime()->getNanos(),
+                '@value' => $w->getStartTime()->getSeconds() . '.' . $w->getStartTime()->getNanos(),
                 'type' => 'literal',
             ];
             $oItem['oa:end'][] = [
                 'property_id' => $this->getProp('oa:end')->id(),
-                '@value' => $w->getEndTime()->getSeconds() . ":" . $w->getEndTime()->getNanos(),
+                '@value' => $w->getEndTime()->getSeconds() . '.' . $w->getEndTime()->getNanos(),
                 'type' => 'literal',
             ];
             $oItem['lexinfo:confidence'][] = [
                 'property_id' => $this->getProp('lexinfo:confidence')->id(),
-                '@value' => $w->getConfidence() . "",
+                '@value' => $w->getConfidence() . '',
                 'type' => 'literal',
             ];
             $oItem['dbo:speaker'][] = [
                 'property_id' => $this->getProp('dbo:speaker')->id(),
-                '@value' => $w->getSpeakerTag() . "",
+                '@value' => $w->getSpeakerTag() . '',
                 'type' => 'literal',
             ];
         }
