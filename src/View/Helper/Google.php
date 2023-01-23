@@ -5,7 +5,7 @@ namespace CartoAffect\View\Helper;
 use Google\Cloud\Speech\V1\RecognitionAudio;
 use Google\Cloud\Speech\V1\RecognitionConfig;
 use Google\Cloud\Speech\V1\RecognitionConfig\AudioEncoding;
-use Google\Cloud\Speech\V1\SpeakerDiarizationConfig;
+// use Google\Cloud\Speech\V1\SpeakerDiarizationConfig;
 use Google\Cloud\Speech\V1\SpeechClient;
 use Laminas\Log\Logger;
 use Laminas\View\Helper\AbstractHelper;
@@ -217,7 +217,7 @@ class Google extends AbstractHelper
     /**
      * ajoute une transcription
      *
-     * @param   SpeechRecognitionAlternative    $alt
+     * @param   \Google\Cloud\Speech\V1\SpeechRecognitionAlternative    $alt
      * @param   o:Item                          $item
      * @param   o:Media                         $media
      *

@@ -28,7 +28,7 @@ class Crible extends AbstractHelper
      * Construction des cribles et des concepts.
      *
      * @param string    $nom nom du crible à récupérer
-     * @param ItemRepresentation     $crible item du crible
+     * @param \Omeka\Api\Representation\ItemRepresentation     $crible item du crible
      * @param string    $action action à faire avec le crible
      * @param array     $params paramètre de l'action
      * @return array

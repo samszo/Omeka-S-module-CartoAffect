@@ -338,9 +338,9 @@ class Scenario extends AbstractHelper
     {
         $arr = explode(':', $ts);
         if (count($arr) == 2) {
-            return "00:" . str_pad($arr[0], 2, "0", STR_PAD_LEFT) . "." . str_pad(substr($arr[1], 0, 3), 3, "0", STR_PAD_LEFT);
+            return "00:" . str_pad((string) $arr[0], 2, "0", STR_PAD_LEFT) . "." . str_pad(substr((string) $arr[1], 0, 3), 3, "0", STR_PAD_LEFT);
         } else {
-            return str_pad($arr[0], 2, "0", STR_PAD_LEFT) . ":" . str_pad($arr[1], 2, "0", STR_PAD_LEFT) . "." . str_pad(substr($arr[1], 0, 3), 3, "0", STR_PAD_LEFT);
+            return str_pad((string) $arr[0], 2, "0", STR_PAD_LEFT) . ":" . str_pad((string) $arr[1], 2, "0", STR_PAD_LEFT) . "." . str_pad(substr((string) $arr[1], 0, 3), 3, "0", STR_PAD_LEFT);
         }
     }
 
@@ -478,7 +478,7 @@ class Scenario extends AbstractHelper
         $rtp = $rt->resourceTemplateProperties();
         foreach ($rtp as $p) {
             $ac = $p->alternateComment();
-            if (substr($ac, 0, 10) == "suggestion") {
+            if ($ac && substr($ac, 0, 10) == "suggestion") {
                 $class = $this->api->search('resource_classes', ['term' => substr($ac, 11)])->getContent()[0];
                 $url = $urlApi
                     . '/items?resource_class_id=' . $class->id()
@@ -797,7 +797,7 @@ class Scenario extends AbstractHelper
                 $data = [];
                 $pVal = $this->getProp($p);
                 $comment = $rt->resourceTemplateProperty($pVal->id())->alternateComment();
-                if (substr($comment, 0, 6) == 'class=') {
+                if ($comment && substr($comment, 0, 6) == 'class=') {
                     $term = substr($comment, 6);
                     $rc = $this->getRc($term);
                     $data['o:resource_class'] = ['o:id' => $rc->id()];
@@ -918,7 +918,7 @@ class Scenario extends AbstractHelper
      *
      * @param int       $idItem
      *
-     * @return json
+     * @return array json
      */
     public function getIndex($idItem)
     {
@@ -1061,7 +1061,7 @@ class Scenario extends AbstractHelper
                 $inScheme = $item->value('skos:inScheme') ? $item->value('skos:inScheme')->__toString() : '';
                 $IRB = $item->value('dcterms:isReferencedBy')->__toString();
                 $dateCreation = $item->value('dcterms:created')->__toString();
-                if (substr($IRB, 0, 7) != 'fromUti') {
+                if (substr((string) $IRB, 0, 7) != 'fromUti') {
                     $IRB = 'fromUti-' . $post['idActant'] . ':' . $IRB;
                 }
                 switch ($inScheme) {

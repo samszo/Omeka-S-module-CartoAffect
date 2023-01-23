@@ -675,7 +675,7 @@ class Diagramme extends AbstractHelper
      * Ajoute les items d'une requête
      *
      * @param array $data
-     * @return oItem
+     * @return o:Item
      */
     protected function ajouteCarte($data)
     {
@@ -727,7 +727,7 @@ class Diagramme extends AbstractHelper
      * Ajoute les liens d'une carte
      *
      * @param array $data
-     * @param oItem $oItemCarte
+     * @param o:Item $oItemCarte
      * @param array $arrEntities
      * @return array
      */
