@@ -1,45 +1,51 @@
-<?php
+<?php declare(strict_types=1);
+
 namespace CartoAffect;
 
 return [
-    
-    'view_helpers' => [
-        
-        'invokables' => [
-            'CartoAffectViewHelper' => View\Helper\CartoAffectViewHelper::class,
-            'CribleViewHelper' => View\Helper\CribleViewHelper::class,
-            'EntityRelationViewHelper' => View\Helper\EntityRelationViewHelper::class,
-            'QuerySqlViewHelper' => View\Helper\QuerySqlViewHelper::class,
-            'DiagrammeViewHelper' => View\Helper\DiagrammeViewHelper::class,
-            'ScenarioViewHelper' => View\Helper\ScenarioViewHelper::class,
-            'GoogleViewHelper' => View\Helper\GoogleViewHelper::class,
-            'CartoHexaViewHelper' => View\Helper\CartoHexaViewHelper::class,
-        ],
-                
-        'factories'  => [
-            'CartoAffectFactory' => Service\ViewHelper\CartoAffectFactory::class,
-            'CribleFactory' => Service\ViewHelper\CribleFactory::class,
-            'EntityRelationFactory' => Service\ViewHelper\EntityRelationFactory::class,
-            'QuerySqlFactory' => Service\ViewHelper\QuerySqlFactory::class,
-            'DiagrammeFactory' => Service\ViewHelper\DiagrammeFactory::class,
-            'ScenarioFactory' => Service\ViewHelper\ScenarioFactory::class,
-            'GoogleFactory' => Service\ViewHelper\GoogleFactory::class,
-            'CartoHexaFactory' => Service\ViewHelper\CartoHexaFactory::class
-        ],
 
+    'view_helpers' => [
+        'factories' => [
+            'cartoAffect' => Service\ViewHelper\CartoAffectFactory::class,
+            'cartoHexa' => Service\ViewHelper\CartoHexaFactory::class,
+            'crible' => Service\ViewHelper\CribleFactory::class,
+            'diagramme' => Service\ViewHelper\DiagrammeFactory::class,
+            'entityRelation' => Service\ViewHelper\EntityRelationFactory::class,
+            'google' => Service\ViewHelper\GoogleFactory::class,
+            'querySql' => Service\ViewHelper\QuerySqlFactory::class,
+            'scenario' => Service\ViewHelper\ScenarioFactory::class,
+        ],
+        // Pour compatibilité avec les anciens thèmes
+        'aliases' => [
+            'CartoAffectViewHelper' => 'cartoAffect',
+            'CartoHexaViewHelper' => 'cartoHexa',
+            'CribleViewHelper' => 'cribleView',
+            'DiagrammeViewHelper' => 'diagramme',
+            'EntityRelationViewHelper' => 'entityRelation',
+            'GoogleViewHelper' => 'googleView',
+            'QuerySqlViewHelper' => 'querySql',
+            'ScenarioViewHelper' => 'scenarioView',
+            'CartoAffectFactory' => 'cartoAffect',
+            'CartoHexaFactory' => 'cartoHexa',
+            'CribleFactory' => 'cribleView',
+            'DiagrammeFactory' => 'diagramme',
+            'EntityRelationFactory' => 'entityRelation',
+            'GoogleFactory' => 'googleView',
+            'QuerySqlFactory' => 'querySql',
+            'ScenarioFactory' => 'scenarioView',
+        ],
     ],
     'form_elements' => [
         'invokables' => [
             Form\ConfigForm::class => Form\ConfigForm::class,
         ],
     ],
-    'CartoAffect' => [
+    'cartoaffect' => [
         'config' => [
             'cartoaffect_mail' => 'anonyme.cartoaffect@univ-paris8.fr',
             'cartoaffect_pwd' => 'anonyme',
-            'ajouteAnnotation'=> 1
+            'ajouteAnnotation' => 1,
         ],
     ],
-
 
 ];

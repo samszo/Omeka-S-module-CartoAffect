@@ -1,11 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * CartoAffect
  *
  * Module pour cartographier les affects
  *
  * @copyright Samuel Szoniecky, 2020
-
  */
 namespace CartoAffect;
 
@@ -15,93 +14,95 @@ if (!class_exists(\Generic\AbstractModule::class)) {
         : __DIR__ . '/src/Generic/AbstractModule.php';
 }
 
+use Generic\AbstractModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
-use Laminas\ServiceManager\ServiceLocatorInterface;
-use Laminas\ModuleManager\ModuleManager;
-use Generic\AbstractModule;
-
 
 class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
-   
-    var $rsVocabularies = [
-        ['prefix'=>'cito','label'=>'Gestion des citations']
-        ,['prefix'=>'genex','label'=>"Générateur d'expressions"]
-        ,['prefix'=>'geom','label'=>'IGN geometry']
-        ,['prefix'=>'jdc','label'=>'Jardin des connaissances']
-        ,['prefix'=>'lexinfo','label'=>'LexInfo']
-        ,['prefix'=>'ma','label'=>'Ontology for Media Resources']
-        ,['prefix'=>'plmk','label'=>'Polemika']
-        ,['prefix'=>'skos','label'=>'SKOS']
-        ,['prefix'=>'schema','label'=>'schema.org']
+
+    protected $dependencies = [
+        'Generic',
+        'Annotate',
+        'ValueSuggest',
+        'Generateur',
+        'CmapImport',
     ];
 
-    var $rsRessourceTemplate = [
-        'Cartographie sémantique'
-        ,'Rapports entre concepts'
-        ,'Concept dans crible'
-        ,'Crible'
-        ,'Rapports entre concepts'
-        ,'Position sémantique : sonar'
-        ,'Position sémantique'
-        ,'Actant'
-        ,'Position sémantique : Geneva Emotion corrections'
-        ,'Position sémantique : Geneva Emotion'
-        ,'Processus CartoAffect'
+    public $rsVocabularies = [
+        ['prefix' => 'arcanes', 'label' => 'Arcanes'],
+        ['prefix' => 'cito', 'label' => 'Gestion des citations'],
+        ['prefix' => 'genex', 'label' => "Générateur d'expressions"],
+        ['prefix' => 'geom', 'label' => 'IGN geometry'],
+        ['prefix' => 'jdc', 'label' => 'Jardin des connaissances'],
+        ['prefix' => 'lexinfo', 'label' => 'LexInfo'],
+        ['prefix' => 'ma', 'label' => 'Ontology for Media Resources'],
+        ['prefix' => 'plmk', 'label' => 'Polemika'],
+        ['prefix' => 'schema', 'label' => 'schema.org'],
+        ['prefix' => 'skos', 'label' => 'SKOS'],
     ];
 
+    public $rsRessourceTemplate = [
+        'Actant',
+        'Cartographie sémantique',
+        'Concept dans crible',
+        'Crible',
+        'Fragment aléatoire',
+        'Histoire',
+        'Indexation vidéo',
+        'Position étoile',
+        'Position sémantique : corrections',
+        'Position sémantique : Geneva Emotion corrections',
+        'Position sémantique : Geneva Emotion',
+        'Position sémantique : sonar',
+        'Position sémantique',
+        'Processus CartoAffect',
+        'Rapports entre concepts',
+        'Scénario event',
+        'Scénario Timeliner',
+        'Scénario track',
+        'Scénario',
+    ];
 
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
     }
 
-    protected function preInstall():void
+    protected function preInstall(): void
     {
-        //vérifie les dépendances
+        $modules = [
+            'Generic' => '3.4.43',
+            'Annotate' => '3.1.2',
+            'ValueSuggest' => '1.5.0',
+            'Generateur' => '3.0.3-alpha',
+            'CmapImport' => '0.0.2',
+        ];
         $services = $this->getServiceLocator();
-        $module = $services->get('Omeka\ModuleManager')->getModule('Generic');
-        if ($module && version_compare($module->getIni('version'), '3.0.18', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Generic', '3.0.18'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $translator = $services->get('MvcTranslator');
+        foreach ($modules as $moduleName => $minVersion) {
+            $module = $moduleManager->getModule($moduleName);
+            if ($module && version_compare($module->getIni('version'), $minVersion, '<')) {
+                $message = new \Omeka\Stdlib\Message(
+                    $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
+                    $moduleName, $minVersion
+                );
+                throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
+            }
         }
-        $module = $services->get('Omeka\ModuleManager')->getModule('Annotate');
-        if ($module && version_compare($module->getIni('version'), '3.1.2', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Annotate', '3.1.2'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-        $module = $services->get('Omeka\ModuleManager')->getModule('ValueSuggest');
-        if ($module && version_compare($module->getIni('version'), '1.5.0', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'ValueSuggest', '1.5.0'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-        $module = $services->get('Omeka\ModuleManager')->getModule('Generateur');
-        if ($module && version_compare($module->getIni('version'), '3.0.3-alpha', '<')) {
-            $translator = $services->get('MvcTranslator');
-            $message = new \Omeka\Stdlib\Message(
-                $translator->translate('This module requires the module "%s", version %s or above.'), // @translate
-                'Generateur', '3.0.3-alpha'
-            );
-            throw new \Omeka\Module\Exception\ModuleCannotInstallException($message);
-        }
-
-
     }
 
+    protected function postInstall(): void
+    {
+        $services = $this->getServiceLocator();
+        $filepath = $this->modulePath() . '/data/scripts/install.php';
+        if (file_exists($filepath) && filesize($filepath) && is_readable($filepath)) {
+            $this->setServiceLocator($services);
+            require_once $filepath;
+        }
+    }
 
     protected function postUninstall():void
     {
@@ -125,14 +126,13 @@ class Module extends AbstractModule
         if (!empty($_POST['remove-template'])) {
             foreach ($this->rsRessourceTemplate as $r) {
                 $installResources->removeResourceTemplate($r);
-            }            
+            }
         }
 
-        //parent::uninstall($services);   
-
+        //parent::uninstall($services);
     }
 
-    public function warnUninstall(Event $event)
+    public function warnUninstall(Event $event): void
     {
         $view = $event->getTarget();
         $module = $view->vars()->module;
@@ -159,10 +159,9 @@ class Module extends AbstractModule
         $html .= '<label><input name="remove-vocabulary" type="checkbox" form="confirmform">';
         $html .= $t->translate('Remove the vocabularies :<br/>'); // @translate
         foreach ($this->rsVocabularies as $v) {
-            $html .= '"'.$v['label'].'"<br/>'; // @translate
+            $html .= '"' . $v['label'] . '"<br/>'; // @translate
         }
         $html .= '</label>';
-
 
         $html .= '<p>';
         $html .= $t->translate('If checked, the resource templates will be removed too. The resource template of the resources that use it will be reset.'); // @translate
@@ -170,14 +169,14 @@ class Module extends AbstractModule
         $html .= '<label><input name="remove-template" type="checkbox" form="confirmform">';
         $html .= $t->translate('Remove the resource templates :<br/>'); // @translate
         foreach ($this->rsRessourceTemplate as $rt) {
-            $html .= '"'.$rt.'"<br/>'; // @translate
+            $html .= '"' . $rt . '"<br/>'; // @translate
         }
         $html .= '</label>';
 
         echo $html;
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         // Display a warn before uninstalling.
         $sharedEventManager->attach(
@@ -185,8 +184,5 @@ class Module extends AbstractModule
             'view.details',
             [$this, 'warnUninstall']
         );
-
-
     }
 }
-

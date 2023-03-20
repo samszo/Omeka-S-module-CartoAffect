@@ -1,17 +1,27 @@
-<?php
+<?php declare(strict_types=1);
+
 namespace CartoAffect\View\Helper;
 
+use Doctrine\DBAL\Connection;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
 
-class QuerySqlViewHelper extends AbstractHelper
+class QuerySql extends AbstractHelper
 {
+    /**
+     * @var ApiManager
+     */
     protected $api;
+
+    /**
+     * @var Connection
+     */
     protected $conn;
 
-    public function __construct($api, $conn)
+    public function __construct(ApiManager $api, Connection $conn)
     {
-      $this->api = $api;
-      $this->conn = $conn;
+        $this->api = $api;
+        $this->conn = $conn;
     }
 
     /**
@@ -20,13 +30,15 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param array     $params paramètre de l'action
      * @return array
      */
-    public function __invoke($params=[])
+    public function __invoke($params = [])
     {
-        if($params==[])return[];
+        if ($params == []) {
+            return[];
+        }
         switch ($params['action']) {
             case 'statResourceTemplate':
                 $result = $this->statResourceTemplate($params['id']);
-                break;            
+                break;
             case 'getDistinctPropertyVal':
                 $result = $this->getDistinctPropertyVal($params['idRT'], $params['idP']);
                 break;
@@ -35,29 +47,29 @@ class QuerySqlViewHelper extends AbstractHelper
                 break;
             case 'cooccurrenceValueResource':
                 $result = $this->cooccurrenceValueResource($params);
-                break;                
+                break;
             case 'tagUses':
                 $result = $this->tagUses($params);
-                break;                
-            }
+                break;
+        }
 
         return $result;
-
     }
 
     /**
-     * renvoie les usages d'un tag 
+     * renvoie les usages d'un tag
      *
      * @param array    $params paramètre de la requête
      * @return array
      */
-    function tagUses($params){
+    public function tagUses($params)
+    {
         //récupère le descriptif des usages = le tag utilisé comme valueResource
-        $query ="SELECT 
+        $query = "SELECT
                 r.id tagId,
                 r.title tagTitle,
                 p.local_name relation,
-                v.resource_id useId,                
+                v.resource_id useId,
                 rc.label useClass
             FROM
                 resource r
@@ -70,27 +82,29 @@ class QuerySqlViewHelper extends AbstractHelper
                     INNER JOIN
                 resource_class rc ON rc.id = rU.resource_class_id
             WHERE
-                        r.title like '%".$params['search']."%' 
-                        AND (p.local_name = 'hasConcept' OR p.local_name = 'semanticRelation') 
+                        r.title like '%" . $params['search'] . "%'
+                        AND (p.local_name = 'hasConcept' OR p.local_name = 'semanticRelation')
                     ";
-                    //GROUP BY r.id, p.local_name ";
+        //GROUP BY r.id, p.local_name ";
         $query .= " ORDER BY r.created";
         $rs = $this->conn->fetchAll($query);
         //détails les usages
         $tags = [];
-        foreach ($rs as $i=>$r) {
+        foreach ($rs as $i => $r) {
             //récupère le détail de l'usage suivant sa class
-            if(!isset($tags[$r['tagId']]))
-                $tags[$r['tagId']]=['tagId'=>$r['tagId'],'tagTitle'=>$r['tagTitle'],'relations'=>[]];
-            if(!isset($tags[$r['tagId']]['relations'][$r['useClass']]))
-                $tags[$r['tagId']]['relations'][$r['useClass']]=[];
+            if (!isset($tags[$r['tagId']])) {
+                $tags[$r['tagId']] = ['tagId' => $r['tagId'],'tagTitle' => $r['tagTitle'],'relations' => []];
+            }
+            if (!isset($tags[$r['tagId']]['relations'][$r['useClass']])) {
+                $tags[$r['tagId']]['relations'][$r['useClass']] = [];
+            }
             switch ($r['useClass']) {
                 case 'part of speech':
-                    $tags[$r['tagId']]['relations'][$r['useClass']][]=$this->getDetailUsagePartOfSpeech($r['tagId'], $r['useId']);
+                    $tags[$r['tagId']]['relations'][$r['useClass']][] = $this->getDetailUsagePartOfSpeech($r['tagId'], $r['useId']);
                     break;
             }
         }
-        return $tags;       
+        return $tags;
     }
 
     /**
@@ -100,14 +114,15 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param int    $idR identifiant de la ressource
      * @return array
      */
-    function getDetailUsagePartOfSpeech($idT, $idR){
-        $query ="SELECT idMin, idMax, nb, pId, pLabel, numVal
+    public function getDetailUsagePartOfSpeech($idT, $idR)
+    {
+        $query = "SELECT idMin, idMax, nb, pId, pLabel, numVal
         , vStart.id, vStart.value start
         , vEnd.id, vEnd.value end
         , vConf.id, vConf.value confidence
         , vSpeak.id, vSpeak.value speaker
         FROM (
-        SELECT 
+        SELECT
             count(v.value_resource_id),
             count(v.value),
             min(v.id) idMin,
@@ -115,32 +130,28 @@ class QuerySqlViewHelper extends AbstractHelper
             max(v.id)-min(v.id) nb,
             v.property_id pId,
             p.label pLabel,
-            min(vC.id) - min(v.id) numVal 
-        FROM        
-            value v 
+            min(vC.id) - min(v.id) numVal
+        FROM
+            value v
             inner join property p on p.id = v.property_id
-            left join value vC on vC.id = v.id and v.property_id = 2068 and v.value_resource_id = ".$idT."
+            left join value vC on vC.id = v.id and v.property_id = 2068 and v.value_resource_id = " . $idT . "
         WHERE
-            v.resource_id = ".$idR."
+            v.resource_id = " . $idR . "
          group by v.resource_id,  v.property_id
          having nb > 1 and numVal > 0
          ) trans,
-         (select id, value, property_id from value WHERE resource_id = ".$idR." and property_id = 208) vStart,
-         (select id, value, property_id from value WHERE resource_id = ".$idR." and property_id = 189) vEnd,
-         (select id, value, property_id from value WHERE resource_id = ".$idR." and property_id = 2043) vConf,
-         (select id, value, property_id from value WHERE resource_id = ".$idR." and property_id = 2082) vSpeak
-        WHERE 
+         (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 208) vStart,
+         (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 189) vEnd,
+         (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 2043) vConf,
+         (select id, value, property_id from value WHERE resource_id = " . $idR . " and property_id = 2082) vSpeak
+        WHERE
         vStart.id = trans.idMin+(nb+1)+numVal
         AND vEnd.id = trans.idMin+((nb+1)*2)+numVal
         AND vConf.id = trans.idMin+((nb+1)*3)+numVal
-        AND vSpeak.id = trans.idMin+((nb+1)*4)+numVal"; 
+        AND vSpeak.id = trans.idMin+((nb+1)*4)+numVal";
         $rs = $this->conn->fetchAll($query);
         return $rs;
     }
-
-    
-    
-
 
     /**
      * renvoie les statistiques d'une class comme valeur de ressource
@@ -148,9 +159,10 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param array    $params paramètre de la requête
      * @return array
      */
-    function statValueResourceClass($params){
+    public function statValueResourceClass($params)
+    {
         $oClass = $this->api->search('resource_classes', ['term' => $params['class']])->getContent()[0];
-        $query ="SELECT 
+        $query = "SELECT
             r.id,
             r.title,
             COUNT(v.id) nbValue,
@@ -165,12 +177,16 @@ class QuerySqlViewHelper extends AbstractHelper
             resource_class_id = ?
         GROUP BY r.id ";
         $having = "";
-        if($params['minVal'] && $params['maxVal'])$having = " HAVING nbValue BETWEEN ".$params['minVal']." AND ".$params['maxVal'];
-        elseif($params['maxVal'])$having = " HAVING nbValue <= ".$params['maxVal'];
-        elseif($params['minVal'])$having = " HAVING nbValue >= ".$params['minVal'];
-        $query .= $having." ORDER BY r.created";
-        $rs = $this->conn->fetchAll($query,[$oClass->id()]);
-        return $rs;       
+        if ($params['minVal'] && $params['maxVal']) {
+            $having = " HAVING nbValue BETWEEN " . $params['minVal'] . " AND " . $params['maxVal'];
+        } elseif ($params['maxVal']) {
+            $having = " HAVING nbValue <= " . $params['maxVal'];
+        } elseif ($params['minVal']) {
+            $having = " HAVING nbValue >= " . $params['minVal'];
+        }
+        $query .= $having . " ORDER BY r.created";
+        $rs = $this->conn->fetchAll($query, [$oClass->id()]);
+        return $rs;
     }
 
     /**
@@ -179,8 +195,9 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param array    $params paramètre de la requête
      * @return array
      */
-    function cooccurrenceValueResource($params){
-        $query ="SELECT 
+    public function cooccurrenceValueResource($params)
+    {
+        $query = "SELECT
                 rlr.title, rlr.id, COUNT(vl.id) nbValue
                 ,GROUP_CONCAT(DISTINCT v.resource_id) idsR
             FROM
@@ -199,8 +216,8 @@ class QuerySqlViewHelper extends AbstractHelper
                 r.id = ?
             GROUP BY rlr.id
             ";
-        $rs = $this->conn->fetchAll($query,[$params['id']]);
-        return $rs;       
+        $rs = $this->conn->fetchAll($query, [$params['id']]);
+        return $rs;
     }
 
     /**
@@ -209,8 +226,9 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param int     $id identifiant du resurce template
      * @return array
      */
-    function statResourceTemplate($id){
-           $query ="SELECT 
+    public function statResourceTemplate($id)
+    {
+        $query = "SELECT
                     COUNT(DISTINCT r.id) nbRes,
                     p.local_name, p.label,
                     p.id pId,
@@ -227,8 +245,8 @@ class QuerySqlViewHelper extends AbstractHelper
                 GROUP BY v.property_id
                 ORDER BY v.value
                 ";
-        $rs = $this->conn->fetchAll($query,[$id]);
-        return $rs;       
+        $rs = $this->conn->fetchAll($query, [$id]);
+        return $rs;
     }
 
     /**
@@ -238,8 +256,9 @@ class QuerySqlViewHelper extends AbstractHelper
      * @param int     $idP identifiant de le propriété
      * @return array
      */
-    function getDistinctPropertyVal($idRT, $idP){
-        $query ="SELECT 
+    public function getDistinctPropertyVal($idRT, $idP)
+    {
+        $query = "SELECT
                 p.local_name,
                 p.id,
                 COUNT(DISTINCT r.id) nb,
@@ -257,13 +276,13 @@ class QuerySqlViewHelper extends AbstractHelper
             WHERE
                 r.resource_template_id = ?
                     AND p.id = ?
-            GROUP BY v.value , value_resource_id    
+            GROUP BY v.value , value_resource_id
              ";
-     $rs = $this->conn->fetchAll($query,[$idRT, $idP]);
-     return $rs;       
+        $rs = $this->conn->fetchAll($query, [$idRT, $idP]);
+        return $rs;
     }
 
-    /**
+    /*
      * recherche sur le titre des resources liées à une propriété
      *
      * @param int     $idP identifiant de le propriété
@@ -272,7 +291,7 @@ class QuerySqlViewHelper extends AbstractHelper
      */
     /*
     function searchLinkedResourcesByTitle($idRT, $idP){
-        $query ="SELECT 
+        $query ="SELECT
                 p.local_name,
                 p.id,
                 COUNT(DISTINCT r.id) nb,
@@ -290,11 +309,10 @@ class QuerySqlViewHelper extends AbstractHelper
             WHERE
                 r.resource_template_id = ?
                     AND p.id = ?
-            GROUP BY v.value , value_resource_id    
+            GROUP BY v.value , value_resource_id
              ";
      $rs = $this->conn->fetchAll($query,[$idRT, $idP]);
-     return $rs;       
+     return $rs;
     }
     */
-
 }
