@@ -34,7 +34,7 @@ class ScenarioViewHelper extends AbstractHelper
         //$this->tempUrl ='https://edisem.arcanes.ca/omk/files/tmp';
         //$this->tempUrl ='https://genstory.jardindesconnaissances.fr/files/tmp';
         //$this->tempUrl ='http://192.168.30.232/genstory/files/tmp';
-        $this->tempUrl ='http://192.168.30.208/omk/files/tmp';
+        //$this->tempUrl ='http://192.168.30.208/omk/files/tmp';
 
     }
 
@@ -100,14 +100,97 @@ class ScenarioViewHelper extends AbstractHelper
                 break;
             case 'getWebVTT':
                 $result = $this->getWebVTT($query['numPos'],$query['idSrc']);
-                break;                
-            default:
+                break;
+            case 'setAllFrag':
+                $result = $this->setAllFrag($query);
+                break;
+            case 'setAleaFrag':
+                $result = $this->setAleaFrag($query);
+                break;
+            case 'getAleaFrag':
+                $result = $this->getAleaFrag($query);
+            break;
+                default:
                 $result = [];
                 break;
         }
         return $result;
     }
 
+    /**
+     * création de tous les fragments d'un media audiovisuel
+     * 
+     * @param   array   $query
+     *
+     * @return array
+     */
+    function setAllFrag($query){
+        $rs = $this->acl->userIsAllowed(null,'create');
+        if($rs){
+            //récupère les références
+            $media = $this->api->read('media', $query['idMedia'])->getContent();
+            $itemMedia = $media->item();
+            //vérifie la présence de l'item pour ne pas la récréer inutilement
+            $ref = 'allFragmentOf_'.$itemMedia->id();
+            $param = array();
+            $param['property'][0]['property']= $this->getProp('dcterms:isReferencedBy')->id()."";
+            $param['property'][0]['type']='eq';
+            $param['property'][0]['text']=$ref; 
+            $exist = $this->api->search('items',$param)->getContent();
+            if(count($exist)==0){
+                //création de l'item pour contenir tous les fragments
+                $itemFrag = ['dcterms:isReferencedBy'=>$ref,'ma:isFragmentOf'=>$itemMedia->id(),'dcterms:title'=>'Tous les fragments de : '.$itemMedia->displayTitle()];
+                return ['media'=>$media,'item'=>$this->saveTrack($itemFrag,"Fragments d'un média")];                           
+            }else return ['media'=>$media,'item'=>$exist[0]];
+        }else return ['error'=>"droits insuffisants",'message'=>"Vous n'avez pas le droit de créer des fragments."];
+
+    }
+
+
+    /**
+     * création d'un fragment aléatoire
+     * 
+     * @param   array   $query
+     *
+     * @return array
+     */
+    function setAleaFrag($query){
+        //récupère un média 
+        $query = array();
+        $query['media_type']= "video/mp4";
+        $medias = $this->api->search('media', $query)->getContent();
+        $media = $medias[array_rand($medias)];
+        $itemMedia = $media->item();
+        $itemFrag = ['ma:isFragmentOf'=>$itemMedia->id(),'dcterms:title'=>'fragment aléatoire de : '.$itemMedia->displayTitle()];
+        return ['media'=>$media,'item'=>$this->saveTrack($itemFrag,'Fragment aléatoire')];
+    }
+
+    /**
+     * récupère un fragment aléatoire
+     * 
+     * @param   array   $query
+     *
+     * @return array
+     */
+    function getAleaFrag($query){
+        //récupère un média 
+        $query = array();
+        $query['resource_class_id']= $this->getRc('oa:FragmentSelector')->id();
+        $query['sort_by']="random";
+        $query['limit']="1";
+        $query['offset']="1";
+        $query['per_page']="1";
+        $item = $this->api->search('items', $query)->getContent()[0];
+        $media = $item->media()[0];
+        //récupère le magic
+        $query = array();
+        $query['resource_class_id']= $this->getRc('lexinfo:PartOfSpeech')->id();
+        $query['property'][0]['property']= $this->getProp('oa:hasSource')->id();
+        $query['property'][0]['type']='res';
+        $query['property'][0]['text']=$item->id(); 
+        $magic = $this->api->search('items', $query)->getContent()[0];                
+        return ['media'=>$media,'item'=>$item,'magic'=>$magic];
+    }
 
     /**
      * récupère les choix
@@ -665,6 +748,7 @@ class ScenarioViewHelper extends AbstractHelper
             case "genstory:hasLieu":
             case "genstory:hasMonde":
             case "genstory:hasObjet":
+            case "ma:isFragmentOf":
                 if(isset($params[$oP->term()]) && $params[$oP->term()]){
                     $val = $params[$oP->term()];
                     if(!is_array($val)) $val= [['id'=>$val]];
@@ -672,7 +756,8 @@ class ScenarioViewHelper extends AbstractHelper
                 }
                 break;                    
             case "genstory:hasScenario":
-                $this->setValeur([['id'=>$params['idScenario']]],$oP,$oItem); 
+                if(isset($params[$oP->term()]))
+                    $this->setValeur([['id'=>$params['idScenario']]],$oP,$oItem); 
                 break;                    
             case "dcterms:created":
             case "dcterms:modified":
