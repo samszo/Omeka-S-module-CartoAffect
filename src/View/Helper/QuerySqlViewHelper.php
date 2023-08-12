@@ -35,12 +35,39 @@ class QuerySqlViewHelper extends AbstractHelper
                 break;
             case 'cooccurrenceValueResource':
                 $result = $this->cooccurrenceValueResource($params);
-                break;                
+                break;
+            case 'statClassUsed':
+                $result = $this->statClassUsed($params);
+                break;
         }
 
         return $result;
 
     }
+
+    /**
+     * renvoie les statistiques d'utilisation des class
+     *
+     * @param array    $params paramètre de la requête
+     * @return array
+     */
+    function statClassUsed($params){
+        $query ="SELECT 
+                COUNT(v.id) nbVal,
+                COUNT(DISTINCT v.resource_id) nbItem,
+                COUNT(DISTINCT v.property_id) nbProp,
+                rc.label
+            FROM
+                value v
+                    LEFT JOIN
+                resource r ON r.id = v.resource_id
+                    LEFT JOIN
+                resource_class rc ON rc.id = r.resource_class_id
+            GROUP BY rc.label";
+        $rs = $this->conn->fetchAll($query);
+        return $rs;       
+    }
+
 
     /**
      * renvoie les statistiques d'une class comme valeur de ressource
