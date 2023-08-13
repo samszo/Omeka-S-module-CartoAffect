@@ -60,14 +60,17 @@ class QuerySqlViewHelper extends AbstractHelper
                 COUNT(v.id) nbVal,
                 COUNT(DISTINCT v.resource_id) nbItem,
                 COUNT(DISTINCT v.property_id) nbProp,
-                rc.label
+                rc.label 'class label',
+                rc.id
             FROM
                 value v
-                    LEFT JOIN
-                resource r ON r.id = v.resource_id
+                    INNER JOIN
+                item i ON i.id = v.resource_id
+                    INNER JOIN
+                resource r ON r.id = i.id
                     LEFT JOIN
                 resource_class rc ON rc.id = r.resource_class_id
-            GROUP BY rc.label";
+            GROUP BY rc.id";
         $rs = $this->conn->fetchAll($query);
         return $rs;       
     }
