@@ -39,6 +39,9 @@ class QuerySqlViewHelper extends AbstractHelper
             case 'statClassUsed':
                 $result = $this->statClassUsed($params);
                 break;
+            case 'statResUsed':
+                $result = $this->statResUsed($params);
+                break;
             case 'tagUses':
                 $result = $this->tagUses($params);
                 break;                
@@ -49,29 +52,91 @@ class QuerySqlViewHelper extends AbstractHelper
     }
 
     /**
+     * renvoie les statistiques d'utilisation d'une ressource
+     *
+     * @param array    $params paramètre de la requête
+     * @return array
+     */
+    function statResUsed($params){
+        $query ="SELECT 
+                r.id,
+                COUNT(v.id) nbVal,
+                COUNT(v.property_id) nbProp,
+                COUNT(DISTINCT r.owner_id) nbOwner,
+                COUNT(v.uri) nbUri,
+                GROUP_CONCAT(v.uri) uris,
+                COUNT(v.value_resource_id) nbRes,
+                GROUP_CONCAT(v.value_resource_id) idsRes,
+                GROUP_CONCAT(CONCAT(vo.prefix, ':', p.local_name)) propsRes,
+                COUNT(v.value_annotation_id) nbAno,
+                r.resource_type,
+                rc.label 'class label',
+                rc.id 'idClass'
+            FROM
+                value v
+                    INNER JOIN
+                resource r ON r.id = v.resource_id
+                    LEFT JOIN
+                resource_class rc ON rc.id = r.resource_class_id
+                    LEFT JOIN
+                value vl ON vl.resource_id = v.resource_id
+                    AND vl.value_resource_id = v.value_resource_id
+                    LEFT JOIN
+                property p ON p.id = vl.property_id
+                    LEFT JOIN
+                vocabulary vo ON vo.id = p.vocabulary_id           
+        ";
+        if($params["id"]){
+            $query .= " WHERE r.id = ?";
+            $rs = $this->conn->fetchAll($query,[$params["id"]]);
+        }elseif ($params["ids"]) {
+            $query .= " WHERE r.id IN ?";
+            $rs = $this->conn->fetchAll($query,[explode(",",$params["ids"])]);
+        }elseif ($params['resource_types']){
+            ini_set('memory_limit', '2048M');
+            $query .= " WHERE r.resource_type IN (";
+            $query .= implode(',', array_fill(0, count($params['resource_types']), '?'));
+            $query .= ")
+                GROUP BY r.id ";
+            $rs = $this->conn->fetchAll($query,$params['resource_types']);
+        }else{
+            ini_set('memory_limit', '2048M');
+            $query .= " WHERE r.resource_type IN (?,?,?,?)
+                GROUP BY r.id ";
+            $rs = $this->conn->fetchAll($query,["Annotate\Entity\Annotation","Omeka\Entity\Item","Omeka\Entity\Media","Omeka\Entity\ItemSet"]);
+        }
+        return $rs;       
+    }
+
+    /**
      * renvoie les statistiques d'utilisation des class
-     * renvoie les usages d'un tag 
      *
      * @param array    $params paramètre de la requête
      * @return array
      */
     function statClassUsed($params){
-        $query ="SELECT 
-                COUNT(v.id) nbVal,
-                COUNT(DISTINCT v.resource_id) nbItem,
-                COUNT(DISTINCT v.property_id) nbProp,
-                rc.label 'class label',
-                rc.id
-            FROM
-                value v
-                    INNER JOIN
-                item i ON i.id = v.resource_id
-                    INNER JOIN
-                resource r ON r.id = i.id
-                    LEFT JOIN
-                resource_class rc ON rc.id = r.resource_class_id
-            GROUP BY rc.id";
-        $rs = $this->conn->fetchAll($query);
+        $query ='SELECT 
+            COUNT(v.id) nbVal,
+            COUNT(DISTINCT v.resource_id) nbItem,
+            COUNT(DISTINCT v.property_id) nbProp,
+            COUNT(DISTINCT r.owner_id) nbOwner,
+            COUNT(DISTINCT v.uri) nbUri,
+            COUNT(DISTINCT v.value_resource_id) nbRes,
+            COUNT(DISTINCT v.value_annotation_id) nbAno,
+            r.resource_type,
+            rc.label "class label",
+            rc.id
+        FROM
+            value v
+                INNER JOIN
+            resource r ON r.id = v.resource_id
+                LEFT JOIN
+            resource_class rc ON rc.id = r.resource_class_id
+        WHERE
+            r.resource_type IN (?,?,?,?)
+        GROUP BY r.resource_type, rc.id, rc.id
+        ';
+        $rs = $this->conn->fetchAll($query,["Annotate\Entity\Annotation","Omeka\Entity\Item","Omeka\Entity\Media","Omeka\Entity\ItemSet"]);
         return $rs;       
     }
 
