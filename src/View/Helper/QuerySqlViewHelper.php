@@ -90,8 +90,11 @@ class QuerySqlViewHelper extends AbstractHelper
             $query .= " WHERE r.id = ?";
             $rs = $this->conn->fetchAll($query,[$params["id"]]);
         }elseif ($params["ids"]) {
-            $query .= " WHERE r.id IN ?";
-            $rs = $this->conn->fetchAll($query,[explode(",",$params["ids"])]);
+            $query .= " WHERE r.id IN (";
+            $query .= implode(',', array_fill(0, count($params['ids']), '?'));
+            $query .= ")
+                GROUP BY r.id ";
+            $rs = $this->conn->fetchAll($query,$params["ids"]);
         }elseif ($params['resource_types']){
             ini_set('memory_limit', '2048M');
             $query .= " WHERE r.resource_type IN (";
