@@ -63,6 +63,7 @@ class QuerySqlViewHelper extends AbstractHelper
                 COUNT(v.id) nbVal,
                 COUNT(v.property_id) nbProp,
                 COUNT(DISTINCT r.owner_id) nbOwner,
+                GROUP_CONCAT(DISTINCT r.owner_id) idsOwner,
                 COUNT(v.uri) nbUri,
                 GROUP_CONCAT(v.uri) uris,
                 COUNT(v.value_resource_id) nbRes,
