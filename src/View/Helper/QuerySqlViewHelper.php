@@ -58,6 +58,8 @@ class QuerySqlViewHelper extends AbstractHelper
      * @return array
      */
     function statResUsed($params){
+        //ATTENTION: on ne prend pas en compte toutes les ressources mais uniquement certains types
+        $resourceTypes = ["Annotate\Entity\Annotation","Omeka\Entity\Item","Omeka\Entity\Media","Omeka\Entity\ItemSet"];
         $query ="SELECT 
                 r.id,
                 COUNT(v.id) nbVal,
@@ -85,29 +87,34 @@ class QuerySqlViewHelper extends AbstractHelper
                     LEFT JOIN
                 property p ON p.id = vl.property_id
                     LEFT JOIN
-                vocabulary vo ON vo.id = p.vocabulary_id           
-        ";
+                vocabulary vo ON vo.id = p.vocabulary_id
+                ";
         if($params["id"]){
             $query .= " WHERE r.id = ?";
             $rs = $this->conn->fetchAll($query,[$params["id"]]);
         }elseif ($params["ids"]) {
             $query .= " WHERE r.id IN (";
             $query .= implode(',', array_fill(0, count($params['ids']), '?'));
-            $query .= ")
+            $query .= ")   
                 GROUP BY r.id ";
             $rs = $this->conn->fetchAll($query,$params["ids"]);
         }elseif ($params['resource_types']){
             ini_set('memory_limit', '2048M');
             $query .= " WHERE r.resource_type IN (";
             $query .= implode(',', array_fill(0, count($params['resource_types']), '?'));
-            $query .= ")
+            $query .= ")  
                 GROUP BY r.id ";
             $rs = $this->conn->fetchAll($query,$params['resource_types']);
+        }elseif($params['vrid']){
+            $query .= " WHERE v.value_resource_id = ? AND r.resource_type IN (";
+            $query .= implode(',', array_fill(0, count($resourceTypes), '?'));
+            $query .= ")  GROUP BY r.id";
+            $rs = $this->conn->fetchAll($query,array_merge([$params["vrid"]], $resourceTypes));
         }else{
             ini_set('memory_limit', '2048M');
-            $query .= " WHERE r.resource_type IN (?,?,?,?)
+            $query .= " WHERE r.resource_type IN (?,?,?,?)  
                 GROUP BY r.id ";
-            $rs = $this->conn->fetchAll($query,["Annotate\Entity\Annotation","Omeka\Entity\Item","Omeka\Entity\Media","Omeka\Entity\ItemSet"]);
+            $rs = $this->conn->fetchAll($query,$resourceTypes);
         }
         return $rs;       
     }
