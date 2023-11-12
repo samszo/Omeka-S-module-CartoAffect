@@ -29,10 +29,53 @@ class CartoHexaViewHelper extends AbstractHelper
             case 'getAllConcept':
                 $result = $this->getAllConcept($params);
                 break;            
-        }
+            case 'getCarte':
+                $result = $this->getCarte($params['query']);
+                break;            
+            }
 
         return $result;
 
+    }
+
+    function getCarte($params){
+        //récupère les données de la carte
+        $carte = $this->api->read('items',$params['id'])->getContent();
+        $tree=array("o:id"=>$carte->id(),"o:title"=>$carte->displayTitle()
+            , "o:resource_class"=>$carte->resourceClass()->label(), "children"=>[]);
+
+        $tree['children']=$this->getCrible($carte);
+        return $tree;
+    }
+
+    function getCrible($r){
+
+        //récupère les cribles de la ressource
+        $cribles=[];
+        $relations = $r->subjectValues();
+        if(count($relations)){
+            foreach ($relations as $k => $r) {
+                foreach ($r as $v) {
+                    $vr = $v['val']->resource();
+                    if($vr->resourceClass()->label()=="Crible"){
+                        $cpt = $vr->value('dcterms:type')->valueResource();
+                        $crible = $vr->jsonSerialize();
+                        $crible["value"]=1;
+                        $crible["children"]=[];
+                        $crible["concept"]=["o:id"=>$cpt->id(),"o:title"=>$cpt->displayTitle()];
+                        $linkCrible = $vr->value('jdc:hasCrible',['all'=>true]);
+                        foreach ($linkCrible as $lk) {
+                            $rv = $lk->valueResource();
+                            if($rv){
+                                $crible['children']=$this->getCrible($rv);
+                            }
+                        }
+                        $cribles[]=$crible;
+                    }
+                }
+            }
+        }
+        return $cribles;
     }
 
     
